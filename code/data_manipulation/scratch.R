@@ -9,3 +9,5 @@ plays <- read_csv("data/plays.csv")
 
 # change game_id and play_id to whichever play you'd like to visualize
 animate_play(week1, game_id = 2022090800, play_id = 80)
+
+# take note of the nullified by penalties column in the play dataframe
