@@ -29,27 +29,33 @@ lowo_evaluate <- function(week)
   # Train participation model ######
   
   # TODO
+  train_participation_model(train_weeks)
   
   # Train tackle model #######
   
   # TODO
+  train_tackle_model(train_weeks)
   
   # Evaluation ######
   # Predict participation probability #######
   
   # TODO
+  predict_participation(week)
   
   # Create hypothetical positioning circle for a given player ########
   
   # TODO 
+  create_position_radius(week)
   
   # Determine optimal position for each player-frame observation #######
   
   # TODO 
+  determine_optimal_position(week)
   
   # Aggregate week results ######
   
   # TODO
+  # function probably not necessary
   
   return(0)
 }
