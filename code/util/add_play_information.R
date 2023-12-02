@@ -18,7 +18,7 @@ add_play_information <- function(track, play)
            ball_carrier_a = a[is_ball_carrier == 1],
            ball_carrier_o = o[is_ball_carrier == 1],
            ball_carrier_dir = dir[is_ball_carrier == 1],
-           distance_to_ball_carrier = sqrt((x - ball_carrier_x)^2 + (y - ball_carrier_y)^2)) %>% 
+           distance_to_ball_carrier = sqrt((x - ball_carrier_x)^2 + (y - ball_carrier_y)^2), .after=dir) %>% 
     ungroup() %>% 
     mutate(end_precedence = case_when(event == "tackle" ~ 3,
                                       event == "touchdown" ~ 3,
