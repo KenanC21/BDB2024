@@ -38,21 +38,16 @@ create_position_radius <- function(week)
   return(all_circles_df)
 }
 
-test <- week1 %>% 
-  head()
-
-test_outcome <- create_position_radius(test)
-
-test_outcome %>% 
-  ggplot(aes(x = x, y = y, color = factor(frameId))) +
-  geom_point() +
-  coord_fixed()
-
-#' Create X coordinates for hypothetical circle
+#' Create hypothetical positioning dataframe for a player-frame observation
 #'
-#' @param x - original X coordinate
+#' @param nflId - player ID of the player
+#' @param gameId - game ID of the play
+#' @param playId - play ID of the play
+#' @param frameId - frame ID of the coordinates for the player
+#' @param x - X coordinate of the player
+#' @param y - Y coordinate of the player
 #'
-#' @return - vector of X values in hypothetical circle
+#' @return - dataframe of hypothetical X-Y values for the player-frame observation
 #'
 create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
 {
@@ -61,7 +56,7 @@ create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
   x_values <- cos(angles)
   y_values <- sin(angles)
   y_values[21] <- 0
-   
+
   # connect all the points
   circle_points <- list(cbind(x_values + x, y_values + y))
   
@@ -73,6 +68,9 @@ create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
   
   # create a grid of points laid over the convex hull
   convex_hull_points <- st_make_grid(convex_hull, what = "centers",
+                                     # 13 by 13 grid, this is arbitrary but I found
+                                     # that this is the best medium for not having too
+                                     # many points and having a good circular shape
                                      n = c(13, 13))
   
   # take out the points on the grid that are outside the circle
@@ -91,31 +89,3 @@ create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
   
   return(all_points_df)
 }
-
-
-angles <- seq(0, 2 * pi, pi / 10)
-x_values <- cos(angles)
-y_values <- sin(angles)
-y_values[21] <- 0
-
-
-
-circle_points <- list(cbind(x_values + 80, y_values + 40))
-
-circle <- st_polygon(circle_points)
-
-convex_hull <- st_convex_hull(circle)
-
-convex_hull_points <- st_make_grid(convex_hull, what = "centers",
-                                   n = c(13, 13))
-
-convex_hull_points <- convex_hull_points[convex_hull]
-all_points <- map(.x = convex_hull_points, .f = st_coordinates)
-
-all_points_df <- do.call(rbind, all_points) %>%
-  as.data.frame()
-
-all_points_df %>% 
-  ggplot(aes(x = X, y = Y)) +
-  geom_point()
-
