@@ -1,3 +1,10 @@
+source("code/modeling/create_position_radius.R")
+source("code/modeling/determine_optimal_position.R")
+source("code/modeling/predict_participation.R")
+source("code/modeling/train_participation_model.R")
+source("code/modeling/train_tackle_model.R")
+
+
 # Leave one week out modeling framework
 # How this works --
 # For each week w:
