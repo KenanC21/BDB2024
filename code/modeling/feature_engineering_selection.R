@@ -8,6 +8,7 @@
 # - look at angles created by players and ballcarrier
 # - ball carrier distance to sideline, distance to endzone
 # - try some interaction terms between differences in speed/acceleration/distance
+# - or maybe just raw speed/acceleration
 
 
 library(tidyverse)
@@ -22,3 +23,7 @@ week1_standardized <- week1 %>%
   add_tackle_information(tackles) %>% 
   standardize_tracking_data() %>% 
   add_play_information(plays)
+
+
+
+

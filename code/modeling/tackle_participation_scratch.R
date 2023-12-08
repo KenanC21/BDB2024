@@ -4,7 +4,7 @@ library(pROC)
 library(tidyverse)
 library(tidymodels)
 library(probably)
-source("tackle_model_data_manipulation.R")
+source("code/data_manipulation/tackle_model_data_manipulation.R")
 
 # Preliminary data split for testing and training 
 
@@ -15,7 +15,7 @@ prelim_split <- preliminary_model_data %>%
          ball_carrier_x_difference = x - ball_carrier_x,
          ball_carrier_y_difference = y - ball_carrier_y,
          ball_carrier_distance_to_sideline = pmin(160/3 - ball_carrier_y, y)) %>% 
-  select(will_make_tackle, distance_to_ball_carrier, ball_carrier_dir_difference,
+  select(will_have_chance_to_make_tackle, distance_to_ball_carrier, ball_carrier_dir_difference,
          ball_carrier_s_difference, ball_carrier_a_difference,
          ball_carrier_x_difference, ball_carrier_y_difference,
          ball_carrier_distance_to_sideline) %>% 
@@ -26,19 +26,19 @@ testing(prelim_split)
 
 # Split training and testing
 train_x <- training(prelim_split) %>% #Independent variables for train
-  select(-will_make_tackle) %>% 
+  select(-will_have_chance_to_make_tackle) %>% 
   as.matrix()
 
 train_y <- training(prelim_split) %>% #Dependent variable for train
-  select(will_make_tackle) %>% 
+  select(will_have_chance_to_make_tackle) %>% 
   as.matrix()
 
 test_x <- testing(prelim_split) %>% #Independent vars for test
-  select(-will_make_tackle) %>% 
+  select(-will_have_chance_to_make_tackle) %>% 
   as.matrix()
 
 test_y <- testing(prelim_split) %>% #Dependent var for test
-  select(will_make_tackle) %>% 
+  select(will_have_chance_to_make_tackle) %>% 
   as.matrix()
 
 

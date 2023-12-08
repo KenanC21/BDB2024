@@ -7,5 +7,5 @@ library(tidyverse)
 #'
 load_tracking_data <- function(week)
 {
-  return(read_csv(paste0("data/tracking_week_", week, ".csv")))
+  return(read_csv(paste0("data/tracking_week_", week, ".csv")) %>% mutate(week = week))
 }

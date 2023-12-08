@@ -18,8 +18,8 @@ week1_standardized <- week1 %>%
 # - for players who are involved in a play, take 
 
 
-preliminary_model_data <- week1_standardized %>% 
-  filter(will_have_chance_to_make_tackle == 1) %>% 
+preliminary_model_data <- week1_standardized #%>% 
+  # filter(will_have_chance_to_make_tackle == 1) %>%
   # TODO - need to filter down to points within the frames of interest
   # remember frames of interest are:
   # - after handoff and before the end of the play for designed run plays
@@ -27,10 +27,10 @@ preliminary_model_data <- week1_standardized %>%
   # - after the QB crosses the LOS and before the end of the play for undesigned 
   #   QB runs
   # this information can be added to the add_play_information() function
-  group_by(nflId, gameId, playId) %>% 
-  filter(frame_of_interest == 1) %>% 
-  slice_min(distance_to_ball_carrier, with_ties = F) %>% 
-  ungroup()
+  # group_by(nflId, gameId, playId) %>% 
+  # filter(frame_of_interest == 1) %>% 
+  # slice_min(distance_to_ball_carrier, with_ties = F) %>% 
+  # ungroup()
 
 # NOTE: some plays have a player listed as having a chance to make the tackle
 # but they are never even close to the ballcarrier. Will have to look into these

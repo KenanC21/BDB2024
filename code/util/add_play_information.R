@@ -18,6 +18,13 @@ add_play_information <- function(track, play)
            ball_carrier_a = a[is_ball_carrier == 1],
            ball_carrier_o = o[is_ball_carrier == 1],
            ball_carrier_dir = dir[is_ball_carrier == 1],
+           ball_carrier_dir_difference = dir - ball_carrier_dir,
+           ball_carrier_s_difference = s - ball_carrier_s,
+           ball_carrier_a_difference = a - ball_carrier_a,
+           ball_carrier_x_difference = x - ball_carrier_x,
+           ball_carrier_y_difference = y - ball_carrier_y,
+           ball_carrier_distance_to_sideline = pmin(160/3 - ball_carrier_y, y),
+           ball_carrier_distance_to_endzone = 110 - ball_carrier_x,
            distance_to_ball_carrier = sqrt((x - ball_carrier_x)^2 + (y - ball_carrier_y)^2), .after=dir) %>% 
     ungroup() %>% 
     mutate(end_precedence = case_when(event == "tackle" ~ 3,

@@ -14,12 +14,8 @@ library(sf)
 #'
 create_position_radius <- function(week)
 {
-  # TODO
   
-  # Probably going to have to cycle through this one using pmap
-  # also may need to alter the helper function to have a spot for player,
-  # play, frame, and game IDs
-  
+  # Gather all information needed to cycle through the player-frame observations
   nflId_list <- week %>% pull(nflId)
   gameId_list <- week %>% pull(gameId)
   playId_list <- week %>% pull(playId)
@@ -27,6 +23,7 @@ create_position_radius <- function(week)
   x_list <- week %>% pull(x)
   y_list <- week %>% pull(y)
   
+  # Run the helper method below on all of the observations
   all_circles_df <- pmap_dfr(.l = list(nflId = nflId_list,
                                        gameId = gameId_list,
                                        playId = playId_list,

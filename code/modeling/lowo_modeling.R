@@ -50,8 +50,6 @@ lowo_evaluate <- function(week)
   predict_participation(week)
   
   # Create hypothetical positioning circle for a given player ########
-  
-  # TODO 
   create_position_radius(week)
   
   # Determine optimal position for each player-frame observation #######

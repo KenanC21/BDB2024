@@ -5,6 +5,7 @@ library(tidymodels)
 source("code/data_manipulation/participation_model_data_manipulation.R")
 
 prelim_data <- week1_standardized %>% 
+  filter(playNullifiedByPenalty == "N") %>% 
   filter(frame_of_interest == 1,
          off_def == "defense")
 
