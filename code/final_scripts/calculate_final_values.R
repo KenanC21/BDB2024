@@ -1,5 +1,9 @@
 # TODO - this will have all final code to run everything at once
-setwd("/Users/michaelegle/BDB2024")
+library(svDialogs)
+path <- dlg_input(message = "Input your working directory:",
+                  default = "C:/DIRECTORY/BDB2024")$res
+
+setwd(path)
 source("code/util/create_and_standardize_week_data.R")
 
 # load in supplementary data
