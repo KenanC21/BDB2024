@@ -12,6 +12,8 @@ add_play_information <- function(track, play)
     mutate(is_ball_carrier = if_else(nflId == ballCarrierId, 1, 0, 0),
            off_def = ifelse(club == possessionTeam, "offense", "defense")) %>% 
     group_by(gameId, playId, frameId) %>% 
+    # some frames don't have a ball carrier listed
+    filter(sum(is_ball_carrier) > 0) %>% 
     mutate(ball_carrier_x = x[is_ball_carrier == 1],
            ball_carrier_y = y[is_ball_carrier == 1],
            ball_carrier_s = s[is_ball_carrier == 1],

@@ -9,6 +9,7 @@ source("code/util/load_tracking_data.R")
 
 create_and_standardize_week_data <- function(week)
 {
+  print(paste("Loading Week", week))
   week_standardized <- load_tracking_data(week) %>% 
     standardize_tracking_data() %>% 
     add_play_information(plays) %>% 

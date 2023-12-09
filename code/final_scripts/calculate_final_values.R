@@ -1,5 +1,10 @@
 # TODO - this will have all final code to run everything at once
+setwd("/Users/michaelegle/BDB2024")
 source("code/util/create_and_standardize_week_data.R")
+
+# load in supplementary data
+plays <- read_csv("data/plays.csv")
+tackles <- read_csv("data/tackles.csv")
 
 # TODO
 # Step 1: Load in / clean data for training
@@ -11,7 +16,20 @@ source("code/util/create_and_standardize_week_data.R")
 # - filter down to defensive player observations
 # - aggregate back down to one observation per player-frame from adding blocker info
 
-all_data
+tictoc::tic()
+all_data <- pmap_dfr(.l = list(1:9),
+                     .f = create_and_standardize_week_data,
+                     .progress = T)
+tictoc::toc()
+
+print("Loaded in all tracking data")
+
+# Make sure that all the data is there
+all_data %>% 
+  group_by(week) %>% 
+  summarize(games = n_distinct(gameId),
+            plays = n_distinct(paste(gameId, playId, sep = "_")),
+            frames = n_distinct(paste(gameId, playId, frame, sep = "_")))s
 
 # TODO
 # Step 2: Train participation model
@@ -36,9 +54,7 @@ all_data
 # TODO
 # Step 7: Aggregate results for game/season level
 
-# load in supplementary data
-plays <- read_csv("data/plays.csv")
-tackles <- read_csv("data/tackles.csv")
+
 
 
 
