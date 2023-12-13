@@ -1,6 +1,3 @@
-source("code/modeling/create_position_radius.R")
-source("code/modeling/determine_optimal_position.R")
-source("code/modeling/predict_participation.R")
 source("code/modeling/train_participation_model.R")
 source("code/modeling/train_tackle_model.R")
 
@@ -20,49 +17,31 @@ source("code/modeling/train_tackle_model.R")
 
 # This will be used to train the final models/create final metric values
 
-#' Leave One Week Out evaluation
+#' Leave One Week Out model training and evaluation
 #'
-#' @param week - the week for which to evaluate the final metric values (between 1 and 9)
+#' @param data - the tracking data for all weeks
+#' @param model_type - which of the two models that will be trained: participation or tackle
 #'
-#' @return - results from the given week
+#' @return
+#' @export
 #'
-lowo_evaluate <- function(week)
+#' @examples
+lowo_evaluate <- function(data, model_type)
 {
-  all_weeks <- 1:9
-  
-  train_weeks <- all_weeks[all_weeks != week]
-  
-  # Model Training ######
-  # Train participation model ######
-  
-  # TODO
-  train_participation_model(train_weeks)
-  
-  # Train tackle model #######
-  
-  # TODO
-  train_tackle_model(train_weeks)
-  
-  # Evaluation ######
-  # Predict participation probability #######
-  
-  # TODO
-  predict_participation(week)
-  
-  # Create hypothetical positioning circle for a given player ########
-  create_position_radius(week)
-  
-  # Determine optimal position for each player-frame observation #######
-  
-  # TODO 
-  determine_optimal_position(week)
-  
-  # Aggregate week results ######
-  
-  # TODO
-  # function probably not necessary
-  
-  return(0)
+  if (model_type == "tackle")
+  {
+    # TODO - call other function where the model will be trained
+    
+    
+    
+    return(0)
+  }
+  if (model_type == "participation")
+  {
+    # TODO - call other function where the model will be trained
+    
+    return(0)
+  }
 }
 
 

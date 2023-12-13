@@ -5,12 +5,12 @@ path <- dlg_input(message = "Input your working directory:",
 
 setwd(path)
 source("code/util/create_and_standardize_week_data.R")
+source("code/modeling/lowo_modeling.R")
 
 # load in supplementary data
 plays <- read_csv("data/plays.csv")
 tackles <- read_csv("data/tackles.csv")
 
-# TODO
 # Step 1: Load in / clean data for training
 # - standardize tracking data
 # - add play info
@@ -29,21 +29,31 @@ tictoc::toc()
 print("Loaded in all tracking data")
 
 # Make sure that all the data is there
-all_data %>% 
-  group_by(week) %>% 
-  summarize(games = n_distinct(gameId),
-            plays = n_distinct(paste(gameId, playId, sep = "_")),
-            frames = n_distinct(paste(gameId, playId, frame, sep = "_")))s
+# all_data %>% 
+#   group_by(week) %>% 
+#   summarize(games = n_distinct(gameId),
+#             plays = n_distinct(paste(gameId, playId, sep = "_")),
+#             frames = n_distinct(paste(gameId, playId, frame, sep = "_")))
 
 # TODO
 # Step 2: Train participation model
-# - use leave-one-week-out (LOWO) approach to ensure out of sample predictions
+# - use 80/20 training/validation split to obtain optimal parameters
+# - use leave-one-week-out (LOWO) approach to ensure out of sample predictions 
+#   with the optimal paramters found above
 # - append predictions to original dataframe
-# - filter down to player-frame obsercations where the player had a chance to make a tackle
+# - filter down to player-frame observations where the player had a chance to make a tackle
+
+participation_model_predictions <- train_participation_model(data.frame())
+
+
+
 
 # TODO
 # Step 3: Train tackle probability model
-# - use leave-one-week-out (LOWO) approach again
+# - Use 80/20 training/validation split to obtain optimal parameters
+# - Train final model on all observations using optimal parameters found above
+
+tackle_model <- train_tackle_model(participation_model_predictions)
 
 # TODO
 # Step 4: Create each player's hypothetical position circles

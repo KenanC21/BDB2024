@@ -4,25 +4,33 @@ library(pROC)
 library(tidyverse)
 library(tidymodels)
 library(probably)
-source("code/data_manipulation/tackle_model_data_manipulation.R")
+# source("code/data_manipulation/tackle_model_data_manipulation.R")
+
+source("code/util/create_and_standardize_week_data.R")
+
 
 # Preliminary data split for testing and training 
 
+preliminary_model_data <- create_and_standardize_week_data(1)
+
 prelim_split <- preliminary_model_data %>% 
-  mutate(ball_carrier_dir_difference = dir - ball_carrier_dir,
-         ball_carrier_s_difference = s - ball_carrier_s,
-         ball_carrier_a_difference = a - ball_carrier_a,
-         ball_carrier_x_difference = x - ball_carrier_x,
-         ball_carrier_y_difference = y - ball_carrier_y,
-         ball_carrier_distance_to_sideline = pmin(160/3 - ball_carrier_y, y)) %>% 
-  select(will_have_chance_to_make_tackle, distance_to_ball_carrier, ball_carrier_dir_difference,
-         ball_carrier_s_difference, ball_carrier_a_difference,
-         ball_carrier_x_difference, ball_carrier_y_difference,
-         ball_carrier_distance_to_sideline) %>% 
+  ungroup() %>% 
+  # mutate(ball_carrier_dir_difference = dir - ball_carrier_dir,
+  #        ball_carrier_s_difference = s - ball_carrier_s,
+  #        ball_carrier_a_difference = a - ball_carrier_a,
+  #        ball_carrier_x_difference = x - ball_carrier_x,
+  #        ball_carrier_y_difference = y - ball_carrier_y,
+  #        ball_carrier_distance_to_sideline = pmin(160/3 - ball_carrier_y, y)) %>% 
+  select(-c(gameId:y),
+         -will_make_tackle) %>%
+  drop_na() %>% 
   initial_split(prop = 0.8)
 
 testing(prelim_split)
 
+
+# target: will_have_chance_to_make_tackle
+# predictors: anything with defender locations/angles with blockers and ballcarrier
 
 # Split training and testing
 train_x <- training(prelim_split) %>% #Independent variables for train
@@ -48,11 +56,13 @@ xgboost_test = xgb.DMatrix(data=test_x, label=test_y)
 
 
 # Creating training model
+tictoc::tic()
 train_model <- xgboost(data = xgboost_train,                      
                  max.depth=3,                           
                  nrounds=100,
                  params = list(objective = "binary:logistic"),
                  eval_metric = 'auc') 
+tictoc::toc()
 summary(train_model)
 
 
@@ -79,5 +89,7 @@ pred <- testing(prelim_split) %>%
 # to make the tackle to be between .813 and .8842
 conf_mat = confusionMatrix(as.factor(as.numeric(test_y)), pred_test_fact)
 print(conf_mat)
- 
+
+plot.roc(test_y,  pred_test)
+
 
