@@ -28,25 +28,47 @@ set.seed(30)
 cv_split <- all_data %>% 
   initial_split(all_data, prop = 0.8, strata = week)
 
-train_x <- training(cv_split) %>% 
+# Split training and testing
+train_x <- training(cv_split) %>% #Independent variables for train
   select(
-    # TODO - input the predictor variables we find useful
+    difference_min_distance_to_ball_carrier,
+    max_angle_formed_by_blocker_and_ball_carrier,
+    min_distance_to_ball_carrier,
+    dir,
+    distance_to_ball_carrier,
+    s,
+    possible_blockers_within_3_yards,
+    ball_carrier_distance_to_sideline,
+    ball_carrier_distance_to_endzone,
+    ball_carrier_dir_difference,
+    ball_carrier_s_difference
   ) %>% 
   as.matrix()
 
-train_y <- training(cv_split) %>% 
+train_y <- training(cv_split) %>% #Dependent variable for train
   select(will_have_chance_to_make_tackle) %>% 
   as.matrix()
 
-validation_x <- testing(cv_split) %>% 
+test_x <- testing(cv_split) %>% #Independent vars for test
   select(
-    # TODO - input the predictor variables we find useful
+    difference_min_distance_to_ball_carrier,
+    max_angle_formed_by_blocker_and_ball_carrier,
+    min_distance_to_ball_carrier,
+    dir,
+    distance_to_ball_carrier,
+    s,
+    possible_blockers_within_3_yards,
+    ball_carrier_distance_to_sideline,
+    ball_carrier_distance_to_endzone,
+    ball_carrier_dir_difference,
+    ball_carrier_s_difference
   ) %>% 
   as.matrix()
 
-validation_y <- testing(cv_split) %>% 
+test_y <- testing(cv_split) %>% #Dependent var for test
   select(will_have_chance_to_make_tackle) %>% 
   as.matrix()
+
 
 param_grid <- expand.grid(
   nrounds = c(100, 200),
@@ -76,10 +98,11 @@ model_cv_helper <- function(param_grid, iteration, threshold = 0.5)
 
   pred_factor = factor(ifelse(pred_test >= threshold, 1, 0))
 
-  pred <- testing(prelim_split) %>%
+  pred <- testing(cv_split) %>%
     bind_cols(pred = pred_test_fact)
 
-  conf_mat <- confusionMatrix(as.factor(as.numeric(test_y)), pred_test_fact)
+  conf_mat <- confusionMatrix(as.factor(as.numeric(test_y)), pred_test_fact,
+                              positive = "1")
   
   # evaluation metrics
   # calculate error rate, specificity and sensitivity
