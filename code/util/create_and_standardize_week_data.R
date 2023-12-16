@@ -41,7 +41,7 @@ create_and_standardize_week_data <- function(week)
            # b is the distance from defender to ball carrier
            # and c is the distance from possible blocker to defender
            theta = ifelse(theta > pi, theta - pi, theta)) %>% 
-    group_by(gameId, playId, nflId, frameId) %>%
+    group_by(gameId, playId, nflId, frameId, week) %>%
     # TODO - this can have a little more done on it, should ideally be a summarize()
     # or at least have an intermediate mutate() to get as much information out of
     # blocker locations as possible
