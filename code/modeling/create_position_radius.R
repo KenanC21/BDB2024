@@ -5,7 +5,9 @@ library(sf)
 
 #' Create Position Radius
 #'
-#' @param week - The week for which we are to create the position radii.
+#' @param week - The data for player observations. We'll use their location
+#'               to create a hypothetical set of positions inside a circle
+#'               with a radius of one yard.
 #'               This should already be filtered down to the players who have
 #'               a "chance" at making a tackle as determined by the participation
 #'               model in the given frame
@@ -49,6 +51,9 @@ create_position_radius <- function(week)
 create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
 {
   # using a unit circle, we're going to create some borders for the circle
+  true_x <- x
+  true_y <- y
+  
   angles <- seq(0, 2 * pi, pi / 10)
   x_values <- cos(angles)
   y_values <- sin(angles)
@@ -82,7 +87,10 @@ create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
            gameId = gameId,
            playId = playId,
            frameId = frameId) %>% 
-    rename(x = X, y = Y)
+    rename(x = X, y = Y) %>% 
+    mutate(hypothetical_position_id = 1:n(),
+           true_x = true_x,
+           true_y = true_y)
   
   return(all_points_df)
 }

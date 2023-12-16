@@ -45,6 +45,7 @@ test_with_values <- test %>%
   filter(!is.na(nflId)) %>% 
   mutate(distance_to_possible_blocker = sqrt((x - possible_blocker_x)^2 + (y - possible_blocker_y)^2),
          # do some geometry
+         # NOTE: this is outdated from the final code for this task
          distance_blocker_to_defender_x = x - possible_blocker_x,
          distance_blocker_to_defender_y = y - possible_blocker_y,
          distance_blocker_to_defender = sqrt(distance_blocker_to_defender_x^2 + distance_blocker_to_defender_y^2),
