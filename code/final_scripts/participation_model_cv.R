@@ -1,9 +1,13 @@
 library(svDialogs)
 library(tidymodels)
+library(xgboost)
 library(caret)
+library(tidyverse)
 
-path <- dlg_input(message = "Input your working directory:",
-                  default = "C:/DIRECTORY/BDB2024")$res
+# path <- dlg_input(message = "Input your working directory:",
+#                   default = "C:/DIRECTORY/BDB2024")$res
+
+path <- "C:/Users/Michael Egle/BDB2024"
 
 setwd(path)
 source("code/util/create_and_standardize_week_data.R")
@@ -26,7 +30,7 @@ tictoc::toc()
 # - check to see if optimal hyperparameters still hold
 set.seed(30)
 cv_split <- all_data %>% 
-  initial_split(all_data, prop = 0.8, strata = week)
+  initial_split(prop = 0.8)
 
 # Split training and testing
 train_x <- training(cv_split) %>% #Independent variables for train
@@ -69,6 +73,8 @@ test_y <- testing(cv_split) %>% #Dependent var for test
   select(will_have_chance_to_make_tackle) %>% 
   as.matrix()
 
+xgboost_train = xgb.DMatrix(data=train_x, label=train_y)
+xgboost_test = xgb.DMatrix(data=test_x, label=test_y)
 
 param_grid <- expand.grid(
   nrounds = c(100, 200),
@@ -77,7 +83,7 @@ param_grid <- expand.grid(
   gamma = 1
 )
 
-model_cv_helper <- function(param_grid, iteration, threshold = 0.5)
+model_cv_helper <- function(param_grid, iteration, threshold = 0.274)
 {
   print(paste0("--------------- ITERATION ", iteration, " ---------------"))
   print("TRAINING MODEL WITH FOLLOWING PARAMETERS:")
@@ -86,7 +92,7 @@ model_cv_helper <- function(param_grid, iteration, threshold = 0.5)
   print(paste("ETA:", param_grid$eta[iteration]))
   print(paste("GAMMA:", param_grid$gamma[iteration]))
   
-  temp_model <- xgboost(data = train_x,
+  temp_model <- xgboost(data = xgboost_train,
                         max.depth = param_grid$max_depth[iteration],
                         nrounds = param_grid$nrounds[iteration],
                         eta = param_grid$eta[iteration],
@@ -94,14 +100,14 @@ model_cv_helper <- function(param_grid, iteration, threshold = 0.5)
                         params = list(objective = "binary:logistic"),
                         eval_metric = 'auc')
 
-  pred <- predict(temp_model, validation_x)
+  pred <- predict(temp_model, xgboost_test)
 
-  pred_factor = factor(ifelse(pred_test >= threshold, 1, 0))
+  pred_factor = factor(ifelse(pred >= threshold, 1, 0))
 
   pred <- testing(cv_split) %>%
-    bind_cols(pred = pred_test_fact)
+    bind_cols(pred = pred_factor)
 
-  conf_mat <- confusionMatrix(as.factor(as.numeric(test_y)), pred_test_fact,
+  conf_mat <- confusionMatrix(as.factor(as.numeric(test_y)), pred_factor,
                               positive = "1")
   
   # evaluation metrics
@@ -113,7 +119,9 @@ model_cv_helper <- function(param_grid, iteration, threshold = 0.5)
                     gamma = param_grid$gamma[iteration],
                     accuracy = conf_mat[["overall"]][["Accuracy"]],
                     sensitivity = conf_mat[["byClass"]][["Sensitivity"]],
-                    specificity = conf_mat[["byClass"]][["Specificity"]]))
+                    specificity = conf_mat[["byClass"]][["Specificity"]],
+                    positive_predictive_value = conf_mat[["byClass"]][["Pos Pred Value"]],
+                    negative_predictive_value = conf_mat[["byClass"]][["Neg Pred Value"]]))
 }
 
 cv_results <- pmap_dfr(.l = list(1:nrow(param_grid)),
@@ -128,5 +136,4 @@ write_csv(cv_results, "misc/participation_model_cv_results.csv")
 # We already do some threshold cutoffs to get a better idea above, but use an ROC
 # curve with the optimal parameters above to get a better
 
-
-
+cv_results <- read_csv("misc/participation_model_cv_results.csv")
