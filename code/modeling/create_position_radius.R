@@ -1,4 +1,7 @@
 library(sf)
+library(future)
+library(furrr)
+
 
 # NOTE: This is for the final model to be trained on the leave one week out
 # (LOWO) data for the final data aggregation
@@ -25,14 +28,17 @@ create_position_radius <- function(week)
   x_list <- week %>% pull(x)
   y_list <- week %>% pull(y)
   
+  
+  future::plan("multisession", workers = availableCores())
   # Run the helper method below on all of the observations
-  all_circles_df <- pmap_dfr(.l = list(nflId = nflId_list,
-                                       gameId = gameId_list,
-                                       playId = playId_list,
-                                       frameId = frameId_list,
-                                       x = x_list,
-                                       y = y_list),
-                             .f = create_position_radius_helper)
+  all_circles_df <- furrr::future_pmap_dfr(.l = list(nflId = nflId_list,
+                                                     gameId = gameId_list,
+                                                     playId = playId_list,
+                                                     frameId = frameId_list,
+                                                     x = x_list,
+                                                     y = y_list),
+                                           .f = create_position_radius_helper,
+                                           .progress = T)
   
   return(all_circles_df)
 }
@@ -73,7 +79,7 @@ create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
                                      # 13 by 13 grid, this is arbitrary but I found
                                      # that this is the best medium for not having too
                                      # many points and having a good circular shape
-                                     n = c(13, 13))
+                                     n = c(8, 8))
   
   # take out the points on the grid that are outside the circle
   convex_hull_points_filtered <- convex_hull_points[convex_hull]
