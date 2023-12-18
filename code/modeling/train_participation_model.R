@@ -33,7 +33,7 @@ train_participation_model_helper <- function(train_weeks, holdout_week)
 {
   # Filter out the week to keep as a holdout week since we want out of sample predictions
   
-  print(paste("Holding out week", week))
+  print(paste("Holding out week", holdout_week))
   
   # test_set <- week %>% 
   #   filter(week == week)
@@ -43,8 +43,21 @@ train_participation_model_helper <- function(train_weeks, holdout_week)
   test <- train_weeks %>% 
     filter(week == holdout_week)
   
+  # Split training and testing
   train_x <- train %>% #Independent variables for train
-    select(-will_have_chance_to_make_tackle) %>% 
+    select(
+      difference_min_distance_to_ball_carrier,
+      max_angle_formed_by_blocker_and_ball_carrier,
+      min_distance_to_ball_carrier,
+      dir,
+      distance_to_ball_carrier,
+      s,
+      possible_blockers_within_3_yards,
+      ball_carrier_distance_to_sideline,
+      ball_carrier_distance_to_endzone,
+      ball_carrier_dir_difference,
+      ball_carrier_s_difference
+    ) %>% 
     as.matrix()
   
   train_y <- train %>% #Dependent variable for train
@@ -52,7 +65,19 @@ train_participation_model_helper <- function(train_weeks, holdout_week)
     as.matrix()
   
   test_x <- test %>% #Independent vars for test
-    select(-will_have_chance_to_make_tackle) %>% 
+    select(
+      difference_min_distance_to_ball_carrier,
+      max_angle_formed_by_blocker_and_ball_carrier,
+      min_distance_to_ball_carrier,
+      dir,
+      distance_to_ball_carrier,
+      s,
+      possible_blockers_within_3_yards,
+      ball_carrier_distance_to_sideline,
+      ball_carrier_distance_to_endzone,
+      ball_carrier_dir_difference,
+      ball_carrier_s_difference
+    ) %>% 
     as.matrix()
   
   test_y <- test %>% #Dependent var for test
@@ -64,22 +89,23 @@ train_participation_model_helper <- function(train_weeks, holdout_week)
   xgboost_test = xgb.DMatrix(data=test_x, label=test_y)
   
   # Creating training model
-  # tictoc::tic()
   participation_model_iter <- xgboost(data = xgboost_train,
-                                      # TODO - update these to be optimal parameters
-                                      max.depth=3,                           
+                                      max.depth = 6,                           
                                       nrounds=100,
+                                      eta = 0.1,
+                                      gamma = 1,
                                       params = list(objective = "binary:logistic"),
                                       eval_metric = 'auc') 
-  # tictoc::toc()
   
   pred_test <- predict(participation_model_iter, xgboost_test)
   # TODO - replace this with the actual value we decide on
   # for decision threshold
-  pred_tackle_participation <- ifelse(pred_test >= 0.138, 1, 0)
+  pred_tackle_participation <- ifelse(pred_test >= 0.267, 1, 0)
   
   final_df <- test %>% 
-    bind_cols(pred)
+    bind_cols(pred_tackle_participation = pred_tackle_participation) %>% 
+    bind_cols(prob = pred_test) %>% 
+    filter(pred_tackle_participation == 1)
   
   return(final_df)
 }

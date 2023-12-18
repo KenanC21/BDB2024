@@ -137,3 +137,9 @@ write_csv(cv_results, "misc/participation_model_cv_results.csv")
 # curve with the optimal parameters above to get a better
 
 cv_results <- read_csv("misc/participation_model_cv_results.csv")
+
+# PARTICIPATION MODEL PARAMETER VALUES:
+# - max depth: 6
+# - n rounds: 100
+# - eta: 0.1
+# - gamma: 1
