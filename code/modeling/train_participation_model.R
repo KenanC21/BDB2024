@@ -1,3 +1,6 @@
+library(future)
+library(furrr)
+
 # NOTE: This is for the final model to be trained on the leave one week out
 # (LOWO) data for the final data aggregation
 
@@ -12,9 +15,12 @@
 #'
 train_participation_model <- function(train_weeks)
 {
-  all_participation_predictions <- pmap_dfr(.l = list(1:9),
-                                            .f = train_participation_model_helper,
-                                            train_weeks = train_weeks)
+  future::plan("multisession", workers = availableCores())
+  
+  all_participation_predictions <- furrr::future_pmap_dfr(.l = list(1:9),
+                                                          .f = train_participation_model_helper,
+                                                          train_weeks = train_weeks,
+                                                          .progress = T)
   
   return(all_participation_predictions)
 }

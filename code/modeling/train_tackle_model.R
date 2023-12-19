@@ -10,7 +10,17 @@ train_tackle_model <- function(train_weeks)
   
   train_x <- train_weeks %>% 
     select(
-      # TODO - select all of the model predictor variables
+      distance_to_ball_carrier,
+      difference_min_distance_to_ball_carrier,
+      max_angle_formed_by_blocker_and_ball_carrier,
+      ball_carrier_s_difference,
+      ball_carrier_dir_difference,
+      dir,
+      ball_carrier_s,
+      s,
+      ball_carrier_distance_to_sideline,
+      possible_blockers_within_7_yards,
+      ball_carrier_distance_to_endzone
     ) %>% 
     as.matrix()
   
@@ -21,10 +31,13 @@ train_tackle_model <- function(train_weeks)
   xgboost_train = xgb.DMatrix(data=train_x, label=train_y)
   
   # Creating training model
-  tackle_model <- xgboost(data = xgboost_train,                      
-                           # TODO - update with final model parameters
-                           params = list(objective = "binary:logistic"),
-                           eval_metric = 'auc') 
+  tackle_model <- xgboost(data = xgboost_train,
+                          max.depth = 6,
+                          nrounds = 200,
+                          eta = 0.2,
+                          gamma = 0.6,
+                          params = list(objective = "binary:logistic"),
+                          eval_metric = 'auc') 
   
   return(tackle_model)
 }

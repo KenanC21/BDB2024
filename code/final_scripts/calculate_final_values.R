@@ -28,7 +28,7 @@ tackles <- read_csv("data/tackles.csv")
 # - aggregate back down to one observation per player-frame from adding blocker info - done
 
 tictoc::tic()
-future::plan("multisession")
+future::plan("multisession", workers = availableCores())
 all_data <- furrr::future_pmap_dfr(.l = list(1:9),
                                    .f = create_and_standardize_week_data,
                                    .progress = T)
@@ -55,6 +55,8 @@ tictoc::tic()
 participation_model_predictions <- train_participation_model(all_data)
 tictoc::toc()
 
+print("Participation Model Trained and Predicted")
+
 saveRDS(participation_model_predictions, "misc/participation_model_pred.RDS")
 
 
@@ -74,13 +76,22 @@ all_position_circles <- create_position_radius(participation_model_predictions)
 all_position_circles_with_all_predictor_variables <- all_position_circles %>%
   left_join(participation_model_predictions %>% select(
     nflId, gameId, playId, frameId,
-    # TODO - add the remaining predictor variables that do NOT change w.r.t. the
-    #        defender's location
+    ball_carrier_s_difference,
+    ball_carrier_dir_difference,
+    dir,
+    ball_carrier_s,
+    s,
+    ball_carrier_distance_to_sideline,
+    ball_carrier_distance_to_endzone
   ))
+
+print(dim(all_position_circles_with_all_predictor_variables))
+
+print(head(all_position_circles_with_all_predictor_variables))
 
 # TODO
 # Step 5: Predict tackle probability at each point
-
+1
 tackle_probs_by_position <- predict_at_hypothetical_point(all_position_circles, tackle_model)
 
 # TODO
