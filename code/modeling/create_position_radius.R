@@ -25,6 +25,7 @@ create_position_radius <- function(week)
   gameId_list <- week %>% pull(gameId)
   playId_list <- week %>% pull(playId)
   frameId_list <- week %>% pull(frameId)
+  week_list <- week %>% pull(week)
   x_list <- week %>% pull(x)
   y_list <- week %>% pull(y)
   
@@ -35,6 +36,7 @@ create_position_radius <- function(week)
                                                      gameId = gameId_list,
                                                      playId = playId_list,
                                                      frameId = frameId_list,
+                                                     week = week_list,
                                                      x = x_list,
                                                      y = y_list),
                                            .f = create_position_radius_helper,
@@ -51,10 +53,11 @@ create_position_radius <- function(week)
 #' @param frameId - frame ID of the coordinates for the player
 #' @param x - X coordinate of the player
 #' @param y - Y coordinate of the player
+#' @param week 
 #'
 #' @return - dataframe of hypothetical X-Y values for the player-frame observation
 #'
-create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
+create_position_radius_helper <- function(nflId, gameId, playId, frameId, week, x, y)
 {
   # using a unit circle, we're going to create some borders for the circle
   true_x <- x
@@ -92,7 +95,8 @@ create_position_radius_helper <- function(nflId, gameId, playId, frameId, x, y)
     mutate(nflId = nflId,
            gameId = gameId,
            playId = playId,
-           frameId = frameId) %>% 
+           frameId = frameId,
+           week = week) %>% 
     rename(x = X, y = Y) %>% 
     mutate(hypothetical_position_id = 1:n(),
            true_x = true_x,

@@ -52,7 +52,7 @@ predict_at_hypothetical_point <- function(hypothetical_positions, tackle_model)
 
 predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_model, week)
 {
-  offensive_player_locations <- get_offensive_player_locations(week)
+  offensive_player_locations <- get_offensive_player_locations(week, plays)
   
   prediction_data <- hypothetical_positions %>% 
     filter(week == week) %>% 
@@ -73,7 +73,13 @@ predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_
     summarize(
       # TODO - aggregate down to one observation for each player-frame-hypothetical position observation
       across(c(x, y,
-               # TODO - add any other predictor that doesn't change
+               ball_carrier_s_difference,
+               ball_carrier_dir_difference,
+               dir,
+               ball_carrier_s,
+               s,
+               ball_carrier_distance_to_sideline,
+               ball_carrier_distance_to_endzone
                ), first),
       max_distance_from_blocker = max(distance_blocker_to_defender),
       possible_blockers_within_3_yards = sum(distance_blocker_to_defender <= 3),
