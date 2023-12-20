@@ -19,7 +19,8 @@ get_offensive_player_locations <- function(week, plays)
     add_play_information(plays) %>% 
     filter(off_def == "offense") %>% 
     select(off_nflId = nflId, gameId, playId, frameId, off_x = x, off_y = y, is_ball_carrier,
-           ball_carrier_x, ball_carrier_y)
+           ball_carrier_x, ball_carrier_y) %>% 
+    filter(is_ball_carrier == 0)
   
   return(week_standardized)
 }
@@ -42,7 +43,7 @@ predict_at_hypothetical_point <- function(hypothetical_positions, tackle_model)
   
   future::plan("multisession")
   
-  final_predictions_all_weeks <- furrr::future_fmap_dfr(.l = list(1:9),
+  final_predictions_all_weeks <- furrr::future_pmap_dfr(.l = list(1:9),
                                                         .f = predict_at_hypothetical_point_helper,
                                                         hypothetical_positions = hypothetical_positions,
                                                         tackle_model = tackle_model)
@@ -60,8 +61,8 @@ predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_
               by = c("gameId", "playId", "frameId")) %>% 
     # same code as the create_and_standardize_week_data() function
     mutate(distance_to_ball_carrier = sqrt((x - ball_carrier_x)^2 + (y - ball_carrier_y)^2),
-           distance_blocker_to_defender = sqrt((possible_blocker_x - x)^2 + (possible_blocker_y - y)^2),
-           distance_blocker_to_ball_carrier = sqrt((ball_carrier_x - possible_blocker_x)^2 + (ball_carrier_y - possible_blocker_y)^2),
+           distance_blocker_to_defender = sqrt((off_x - x)^2 + (off_y - y)^2),
+           distance_blocker_to_ball_carrier = sqrt((ball_carrier_x - off_x)^2 + (ball_carrier_y - off_y)^2),
            theta = acos((distance_blocker_to_defender^2 + distance_blocker_to_ball_carrier^2 - distance_to_ball_carrier^2) /
                           (2 * distance_blocker_to_defender * distance_blocker_to_ball_carrier)),
            # refresher: law of cosines says cos(b) = (c^2 + a^2 - b^2) / 2*a*c
@@ -79,8 +80,10 @@ predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_
                ball_carrier_s,
                s,
                ball_carrier_distance_to_sideline,
-               ball_carrier_distance_to_endzone
-               ), first),
+               ball_carrier_distance_to_endzone,
+               distance_to_ball_carrier,
+               min_distance_to_ball_carrier
+      ), first),
       max_distance_from_blocker = max(distance_blocker_to_defender),
       possible_blockers_within_3_yards = sum(distance_blocker_to_defender <= 3),
       possible_blockers_within_4_yards = sum(distance_blocker_to_defender <= 4),
@@ -91,15 +94,32 @@ predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_
       possible_blockers_with_over_135_degree_angle = sum(theta >= 3 * pi / 4),
       max_angle_formed_by_blocker_and_ball_carrier = max(theta)
     ) %>% 
-    ungroup()
+    ungroup() %>%
+    mutate(min_distance_to_ball_carrier = pmin(min_distance_to_ball_carrier, distance_to_ball_carrier),
+           difference_min_distance_to_ball_carrier = distance_to_ball_carrier - min_distance_to_ball_carrier)
   
   # Then use predict function
   
-  pred <- predict(tackle_model, prediction_data)
+  prediction_data_matrix <- prediction_data %>% 
+    select(distance_to_ball_carrier,
+           difference_min_distance_to_ball_carrier,
+           max_angle_formed_by_blocker_and_ball_carrier,
+           ball_carrier_s_difference,
+           ball_carrier_dir_difference,
+           dir,
+           ball_carrier_s,
+           s,
+           ball_carrier_distance_to_sideline,
+           possible_blockers_within_7_yards,
+           ball_carrier_distance_to_endzone) %>% 
+    as.matrix() %>% 
+    xgb.DMatrix()
   
-  final_predictions <- prediction_data %>% 
+  pred <- predict(tackle_model, newdata = prediction_data_matrix)
+  
+  final_predictions <- hypothetical_positions %>% 
     bind_cols(tackle_prob = pred) %>% 
-    select(nflId, gameId, playId, frameId, hypothetical_position_id,
+    select(nflId, gameId, playId, frameId, week, hypothetical_position_id,
            x, y, true_x, true_y, tackle_prob)
   
   return(final_predictions)

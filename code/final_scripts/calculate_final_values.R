@@ -74,16 +74,17 @@ tackle_model <- train_tackle_model(participation_model_predictions)
 all_position_circles <- create_position_radius(participation_model_predictions)
 
 all_position_circles_with_all_predictor_variables <- all_position_circles %>%
-  left_join(participation_model_predictions %>% select(
-    nflId, gameId, playId, frameId,
-    ball_carrier_s_difference,
-    ball_carrier_dir_difference,
-    dir,
-    ball_carrier_s,
-    s,
-    ball_carrier_distance_to_sideline,
-    ball_carrier_distance_to_endzone
-  ))
+  left_join(participation_model_predictions %>% select(nflId, gameId, playId, frameId, 
+                                                       ball_carrier_s_difference,
+                                                       ball_carrier_dir_difference,
+                                                       dir,
+                                                       ball_carrier_s,
+                                                       s,
+                                                       ball_carrier_distance_to_sideline,
+                                                       ball_carrier_distance_to_endzone,
+                                                       # note that the min distance can change, we will update
+                                                       # that later
+                                                       min_distance_to_ball_carrier))
 
 print(dim(all_position_circles_with_all_predictor_variables))
 
@@ -91,15 +92,15 @@ print(head(all_position_circles_with_all_predictor_variables))
 
 # TODO
 # Step 5: Predict tackle probability at each point
-1
-tackle_probs_by_position <- predict_at_hypothetical_point(all_position_circles, tackle_model)
+
+tackle_probs_by_position <- predict_at_hypothetical_point(all_position_circles_with_all_predictor_variables, tackle_model)
 
 # TODO
 # Step 6: Find distance from optimal position for each player-frame observation
 
 optimal_positions <- tackle_probs_by_position %>%
   mutate(distance_from_actual_position = sqrt((x - true_x)^2 + (y - true_y)^2)) %>%
-  group_by(nflId, gameId, playId, frameId) %>%
+  group_by(nflId, gameId, playId, frameId, week) %>%
   arrange(distance_from_actual_position) %>%
   summarize(max_tackle_prob = max(tackle_prob),
             optimal_position_x = first(x[tackle_probability == max_tackle_prob]),
@@ -108,10 +109,17 @@ optimal_positions <- tackle_probs_by_position %>%
             actual_tackle_prob = tackle_prob[x == true_x & y == true_y],
             prob_difference = actual_tackle_prob - max_tackle_prob)
 
-saveRDS(optimal_positions, "misc/optimal_positions.RDS")
+optimal_positions %>% 
+  group_by(week) %>%
+  summarize(games = n_distinct(gameId),
+            plays = n_distinct(paste(gameId, playId, sep = "_")),
+            frames = n_distinct(paste(gameId, playId, frameId, sep = "_")))
 
-# TODO
-# Step 7: Aggregate results for game/season level
+print(dim(optimal_positions))
+
+print(optimal_positions %>% head(20))
+
+saveRDS(optimal_positions, "misc/optimal_positions.RDS")
 
 saveRDS(tackle_model, "models/tackle_model.RDS")
 

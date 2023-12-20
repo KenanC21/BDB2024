@@ -79,10 +79,10 @@ create_position_radius_helper <- function(nflId, gameId, playId, frameId, week, 
   
   # create a grid of points laid over the convex hull
   convex_hull_points <- st_make_grid(convex_hull, what = "centers",
-                                     # 13 by 13 grid, this is arbitrary but I found
+                                     # 9 by 9 grid, this is arbitrary but I found
                                      # that this is the best medium for not having too
                                      # many points and having a good circular shape
-                                     n = c(8, 8))
+                                     n = c(9, 9))
   
   # take out the points on the grid that are outside the circle
   convex_hull_points_filtered <- convex_hull_points[convex_hull]

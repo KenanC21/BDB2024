@@ -38,7 +38,10 @@ test_position_radius_with_all_predictors <- test_position_radius %>%
                      ball_carrier_s,
                      s,
                      ball_carrier_distance_to_sideline,
-                     ball_carrier_distance_to_endzone))
+                     ball_carrier_distance_to_endzone,
+                     # note that the min distance can change, we will update
+                     # that later
+                     min_distance_to_ball_carrier))
 
 # now test the predict_at_hypothetical_point function
 
@@ -46,6 +49,7 @@ test_position_radius_with_all_predictors <- test_position_radius %>%
 offensive_player_locations <- get_offensive_player_locations(1, plays)
 
 tictoc::tic()
+
 prediction_data <- test_position_radius_with_all_predictors %>% 
   filter(week == 1) %>% 
   left_join(offensive_player_locations,
@@ -71,8 +75,9 @@ prediction_data <- test_position_radius_with_all_predictors %>%
              ball_carrier_s,
              s,
              ball_carrier_distance_to_sideline,
-             ball_carrier_distance_to_endzone
-             # TODO - add any other predictor that doesn't change
+             ball_carrier_distance_to_endzone,
+             distance_to_ball_carrier,
+             min_distance_to_ball_carrier
     ), first),
     max_distance_from_blocker = max(distance_blocker_to_defender),
     possible_blockers_within_3_yards = sum(distance_blocker_to_defender <= 3),
@@ -84,15 +89,42 @@ prediction_data <- test_position_radius_with_all_predictors %>%
     possible_blockers_with_over_135_degree_angle = sum(theta >= 3 * pi / 4),
     max_angle_formed_by_blocker_and_ball_carrier = max(theta)
   ) %>% 
-  ungroup()
+  ungroup() %>%
+  mutate(min_distance_to_ball_carrier = pmin(min_distance_to_ball_carrier, distance_to_ball_carrier),
+         difference_min_distance_to_ball_carrier = distance_to_ball_carrier - min_distance_to_ball_carrier)
+
 tictoc::toc()
 
 # Then use predict function
 
-pred <- predict(tackle_model, newdata = prediction_data)
+prediction_data_matrix <- prediction_data %>% 
+  select(distance_to_ball_carrier,
+         difference_min_distance_to_ball_carrier,
+         max_angle_formed_by_blocker_and_ball_carrier,
+         ball_carrier_s_difference,
+         ball_carrier_dir_difference,
+         dir,
+         ball_carrier_s,
+         s,
+         ball_carrier_distance_to_sideline,
+         possible_blockers_within_7_yards,
+         ball_carrier_distance_to_endzone) %>% 
+  as.matrix() %>% 
+  xgb.DMatrix()
 
-final_predictions <- prediction_data %>% 
+pred <- predict(tackle_model, newdata = prediction_data_matrix)
+
+final_predictions <- test_position_radius_with_all_predictors %>% 
   bind_cols(tackle_prob = pred) %>% 
   select(nflId, gameId, playId, frameId, hypothetical_position_id,
          x, y, true_x, true_y, tackle_prob)
+
+final_predictions %>% 
+  filter(nflId == 52462) %>% 
+  filter(gameId == 2022090800) %>% 
+  filter(playId == 1836) %>% 
+  filter(frameId == 20) -> new_pred_test #%>% 
+  ggplot(aes(x = x, y = y, fill = tackle_prob)) +
+  geom_raster()
+
 
