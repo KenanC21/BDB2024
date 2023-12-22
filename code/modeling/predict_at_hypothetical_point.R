@@ -36,27 +36,33 @@ get_offensive_player_locations <- function(week, plays)
 #' @export
 #'
 #' @examples
-predict_at_hypothetical_point <- function(hypothetical_positions, tackle_model)
+predict_at_hypothetical_point <- function(hypothetical_positions, tackle_model, week)
 {
   # We'll need to add the positions of the possible blockers and ball carrier
   # back to this data, as well as recalculate the angles, distances, etc
   
   future::plan("multisession")
   
-  final_predictions_all_weeks <- furrr::future_pmap_dfr(.l = list(1:9),
+  gameId_list <- hypothetical_positions %>% pull(gameId) %>% unique()
+  
+  offensive_player_locations <- get_offensive_player_locations(week, plays)
+  
+  final_predictions_all_weeks <- furrr::future_pmap_dfr(.l = list(gameId_list),
                                                         .f = predict_at_hypothetical_point_helper,
                                                         hypothetical_positions = hypothetical_positions,
-                                                        tackle_model = tackle_model)
+                                                        tackle_model = tackle_model,
+                                                        week = week,
+                                                        offensive_player_locations = offensive_player_locations,
+                                                        .progress = T)
   
   return(final_predictions_all_weeks)
 }
 
-predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_model, week)
+predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_model, game, week,
+                                                 offensive_player_locations)
 {
-  offensive_player_locations <- get_offensive_player_locations(week, plays)
-  
   prediction_data <- hypothetical_positions %>% 
-    filter(week == week) %>% 
+    filter(gameId == game) %>% 
     left_join(offensive_player_locations,
               by = c("gameId", "playId", "frameId")) %>% 
     # same code as the create_and_standardize_week_data() function
@@ -118,6 +124,7 @@ predict_at_hypothetical_point_helper <- function(hypothetical_positions, tackle_
   pred <- predict(tackle_model, newdata = prediction_data_matrix)
   
   final_predictions <- hypothetical_positions %>% 
+    filter(gameId == game) %>% 
     bind_cols(tackle_prob = pred) %>% 
     select(nflId, gameId, playId, frameId, week, hypothetical_position_id,
            x, y, true_x, true_y, tackle_prob)
