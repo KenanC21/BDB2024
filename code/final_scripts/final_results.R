@@ -24,7 +24,15 @@ season_results <- optimal_positions %>%
   ungroup() %>% 
   left_join(players %>% 
               select(nflId, position, displayName),
-            by = "nflId")
+            by = "nflId") %>% 
+  # TODO - find out what to do with Isaiah Simmons. He's the only player listed
+  # as DB, sources conflict on whether he's a LB or S
+  mutate(position = case_when(position %in% c("CB") ~ "CB",
+                              position %in% c("SS", "FS") ~ "S",
+                              # not sure about this one with NT and DT
+                              position %in% c("DT", "NT") ~ "DT",
+                              position %in% c("MLB", "ILB", "OLB") ~ "LB",
+                              position %in% c("DE") ~ "DE"))
 
 season_results %>% 
   ggplot(aes(x = avg_misalignment, y = avg_tackle_prob_lost)) +
@@ -32,29 +40,29 @@ season_results %>%
   facet_grid(. ~ run_pass)
 
 
-# About 20 snaps involved for pass, 30 for run?
+# About 25 snaps involved for pass, 30 for run?
 season_results %>% 
   ggplot(aes(x = snaps)) +
   geom_histogram() +
-  facet_grid(. ~ run_pass)
+  facet_grid(position ~ run_pass)
 
 season_results_pass <- season_results %>% 
   filter(run_pass == "pass") %>% 
-  filter(snaps >= 25) %>% 
   group_by(position) %>% 
   arrange(avg_misalignment) %>% 
+  filter(snaps >= quantile(snaps, 0.7)) %>% 
   mutate(misalignment_rank = 1:n()) %>% 
-  arrange(desc(avg_tackle_prob_lost)) %>% 
-  mutate(tackle_prob_lost_rank = 1:n()) %>% 
+  # arrange(desc(avg_tackle_prob_lost)) %>% 
+  # mutate(tackle_prob_lost_rank = 1:n()) %>% 
   ungroup()
   
 season_results_run <- season_results %>% 
   filter(run_pass == "run") %>% 
-  filter(snaps >= 30) %>% 
   group_by(position) %>% 
   arrange(avg_misalignment) %>% 
+  filter(snaps >= quantile(snaps, 0.7)) %>% 
   mutate(misalignment_rank = 1:n()) %>% 
-  arrange(desc(avg_tackle_prob_lost)) %>% 
-  mutate(tackle_prob_lost_rank = 1:n()) %>% 
+  # arrange(desc(avg_tackle_prob_lost)) %>% 
+  # mutate(tackle_prob_lost_rank = 1:n()) %>% 
   ungroup()
 
