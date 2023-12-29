@@ -1,37 +1,43 @@
 library(tidyverse)
 library(dplyr)
+library(nflfastR)
+library(gt)
+library(gtExtras)
+windowsFonts("Roboto" = windowsFont("Roboto"))
 
 source("code/final_scripts/final_results.R")
 
-Top_15_pass = season_results_pass %>%
+#Top 15 Players by Misalignment by Pass and Run plays respectively
+Top15_pass = season_results_pass %>%
   group_by(position) %>% 
+  mutate(position = recode(position,"CB" = "Cornerback",
+                         "LB" = "Linebacker",
+                         "S" = "Safety",
+                         "DT" = "Defensive Tackle",
+                         "DE" = "Defensive End")) %>%
   filter(misalignment_rank < 16)
-Top_15_pass = Top_15_pass %>% relocate(nflId)
-Top_15_pass = Top_15_pass %>% relocate(misalignment_rank)
 
-#load_roster from nflreadr to get 2021 headshots
+Top15_run = season_results_run %>%
+  group_by(position) %>% 
+  mutate(position = recode(position,"CB" = "Cornerback",
+                           "LB" = "Linebacker",
+                           "S" = "Safety",
+                           "DT" = "Defensive Tackle",
+                           "DE" = "Defensive End")) %>%
+  filter(misalignment_rank < 16)
+
+
+#load_roster from nflreadr to get 2022 headshots
 roster = nflreadr::load_rosters(2022)
 names(roster)[7] <- "displayName"
-newdf = merge(Top_15_pass, roster, by = 'displayName')
+heads = roster[ , c('displayName', 'headshot_url')]
 
+#merge headshot url's with Top15_pass and Top15_run ordered by misalignment rank
+pass_headshots = merge(Top15_pass, heads, by = 'displayName') %>%
+  arrange(misalignment_rank, .by_group = TRUE) 
+run_headshots = merge(Top15_run, heads, by = 'displayName') %>%
+  arrange(misalignment_rank, .by_group = TRUE) 
 
-#DF updated with headshot URL for Pass
-Top_15_pass = Top_15_pass %>% arrange(displayName)
-Top_15_pass = bind_cols(Top_15_pass,newdf %>% 
-                           select(headshot_url))
-
-
-#repeat for running plays results
-Top_15_run = season_results_run %>%
-  group_by(position) %>% 
-  filter(misalignment_rank < 16)
-Top_15_run = Top_15_run %>% relocate(nflId)
-Top_15_run = Top_15_run %>% relocate(misalignment_rank)
-
-#DF updated with headshot URL for Run
-Top_15_run = Top_15_run %>% arrange(displayName)
-Top_15_run = bind_cols(Top_15_run,newdf %>% 
-                          select(headshot_url))
 
 
 #gt theme from TheMockUp
@@ -98,6 +104,7 @@ gt_theme_pff <- function(data, ...) {
       headshot_url ~ px(60),
       avg_misalignment ~ px(150),
       avg_tackle_prob_lost ~ px(150),
+      position ~ px(70),
       everything() ~ px(60)
     ) %>% 
     # change color of border separating the text from the sourcenote
@@ -123,18 +130,34 @@ gt_theme_pff <- function(data, ...) {
               locations = cells_body())
 }
 
-
-#CB Top 15 Run
-cb_table <- Top_15_run %>% 
-  select(misalignment_rank, snaps, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost) %>%
+# Top 15 Pass
+pass_table <- pass_headshots %>%
+  select(misalignment_rank, snaps, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, position) %>%
   mutate(avg_misalignment = round(avg_misalignment, 4),
          avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4),
-         officialPosition = case_when(position == "CB" ~ "Cornerbacks",
-                                      position == "LB" ~ "Linebackers",
-                                      position == "S" ~ "Safeties",
-                                      position == "DT" ~ "Defensive Tackles",
-                                      position == "DE" ~ "Defensive Ends")) %>%
+         Position = case_when(position == "Cornerback" ~ "CB",
+                                      position == "Linebacker" ~ "LB",
+                                      position == "Safety" ~ "S",
+                                      position == "Defensive Tackle" ~ "DT",
+                                      position == "Defensive End" ~ "DE")) %>%
   gt(groupname_col = 'position') %>%
   gt_theme_pff() %>%
-  tab_header(title = "Top 15 Players in Run Play Misalignment by Position")
-             #subtitle = "First 8 Games of 2021 Season Only | Minimum of 200 Snaps")
+  tab_header(title = "Top 15 Players in Pass Play Misalignment by Position")
+
+pass_table
+
+# Top 15 Run
+run_table <- run_headshots %>%
+  select(misalignment_rank, snaps, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, position) %>%
+  mutate(avg_misalignment = round(avg_misalignment, 4),
+         avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4),
+         Position = case_when(position == "Cornerback" ~ "CB",
+                              position == "Linebacker" ~ "LB",
+                              position == "Safety" ~ "S",
+                              position == "Defensive Tackle" ~ "DT",
+                              position == "Defensive End" ~ "DE")) %>%
+  gt(groupname_col = 'position') %>%
+  gt_theme_pff() %>%
+  tab_header(title = "Top 15 Players in Pass Play Misalignment by Position")
+
+run_table
