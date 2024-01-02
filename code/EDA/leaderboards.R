@@ -158,6 +158,6 @@ run_table <- run_headshots %>%
                               position == "Defensive End" ~ "DE")) %>%
   gt(groupname_col = 'position') %>%
   gt_theme_pff() %>%
-  tab_header(title = "Top 15 Players in Pass Play Misalignment by Position")
+  tab_header(title = "Top 15 Players in Run Play Misalignment by Position")
 
 run_table
