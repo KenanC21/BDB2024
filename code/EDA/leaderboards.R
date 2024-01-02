@@ -1,8 +1,10 @@
 library(tidyverse)
 library(dplyr)
+library(viridis)
 library(nflfastR)
 library(gt)
 library(gtExtras)
+library(webshot2)
 windowsFonts("Roboto" = windowsFont("Roboto"))
 
 source("code/final_scripts/final_results.R")
@@ -39,7 +41,6 @@ run_headshots = merge(Top15_run, heads, by = 'displayName') %>%
   arrange(misalignment_rank, .by_group = TRUE) 
 
 
-
 #gt theme from TheMockUp
 gt_theme_pff <- function(data, ...) {
   data %>%
@@ -58,7 +59,6 @@ gt_theme_pff <- function(data, ...) {
     # Relabel columns
     cols_label(
       misalignment_rank = 'Rank',
-      position = "Position",
       headshot_url = " ",
       snaps = "Snaps",
       avg_misalignment = 'AVG Misalignment',
@@ -132,14 +132,9 @@ gt_theme_pff <- function(data, ...) {
 
 # Top 15 Pass
 pass_table <- pass_headshots %>%
-  select(misalignment_rank, snaps, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, position) %>%
+  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
   mutate(avg_misalignment = round(avg_misalignment, 4),
-         avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4),
-         Position = case_when(position == "Cornerback" ~ "CB",
-                                      position == "Linebacker" ~ "LB",
-                                      position == "Safety" ~ "S",
-                                      position == "Defensive Tackle" ~ "DT",
-                                      position == "Defensive End" ~ "DE")) %>%
+         avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
   gt(groupname_col = 'position') %>%
   gt_theme_pff() %>%
   tab_header(title = "Top 15 Players in Pass Play Misalignment by Position")
@@ -148,16 +143,17 @@ pass_table
 
 # Top 15 Run
 run_table <- run_headshots %>%
-  select(misalignment_rank, snaps, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, position) %>%
+  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
   mutate(avg_misalignment = round(avg_misalignment, 4),
-         avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4),
-         Position = case_when(position == "Cornerback" ~ "CB",
-                              position == "Linebacker" ~ "LB",
-                              position == "Safety" ~ "S",
-                              position == "Defensive Tackle" ~ "DT",
-                              position == "Defensive End" ~ "DE")) %>%
+         avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
   gt(groupname_col = 'position') %>%
   gt_theme_pff() %>%
   tab_header(title = "Top 15 Players in Run Play Misalignment by Position")
 
 run_table
+
+gtsave(pass_table, "pass_table.png", expand = 75)
+gtsave(run_table, "run_table.png", expand = 75)
+
+listed_tables <- list(pass_table, run_table)
+pass_run_comp_table <- gt_two_column_layout(listed_tables)
