@@ -303,30 +303,6 @@ cb_table
 
 
 
-
-gtsave(pass_table, "pass_table.png", expand = 75)
-gtsave(run_table, "run_table.png", expand = 75)
-
-listed_tables <- list(pass_table, run_table)
-pass_run_comp_table <- gt_two_column_layout(listed_tables)
-
-
-
-
-mtcars %>% 
-  mutate(good_mpg = ifelse(mpg > 20, "Good mileage", "Bad mileage"), 
-         car_name = row.names(.))  %>% 
-  arrange(hp) %>% 
-  group_by(relevel(factor(good_mpg), "Good mileage")) %>% 
-  slice_head(n=5) %>% 
-  select(car_name, hp) %>%
-  group_map(~ hp_table(.x)) %>% 
-  data.frame(.) %>% 
-  setNames(., c("High mileage", "Low mileage")) %>% 
-  gt() %>% 
-  fmt_markdown(columns = TRUE)
-
-
 season_results_rp %>% 
   filter(position == "DT") %>% 
   arrange(misalignment_rank) %>% 
