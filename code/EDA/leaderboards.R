@@ -5,9 +5,18 @@ library(nflfastR)
 library(gt)
 library(gtExtras)
 library(webshot2)
+library(scales)
 windowsFonts("Roboto" = windowsFont("Roboto"))
 
 source("code/final_scripts/final_results.R")
+
+# code from this super handy stack overflow thread for side by side GT tables
+# https://stackoverflow.com/questions/65835639/arrange-gt-tables-side-by-side-or-in-a-grid-or-table-of-tables
+misalignment_rp_table <- function(x){
+  gt(x) %>% 
+    tab_options(column_labels.hidden = TRUE) %>% 
+    as_raw_html()
+}
 
 #Top 15 Players by Misalignment by Pass and Run plays respectively
 Top15_pass = season_results_pass %>%
@@ -17,7 +26,7 @@ Top15_pass = season_results_pass %>%
                          "S" = "Safety",
                          "DT" = "Defensive Tackle",
                          "DE" = "Defensive End")) %>%
-  filter(misalignment_rank < 16)
+  filter(misalignment_rank < 11)
 
 Top15_run = season_results_run %>%
   group_by(position) %>% 
@@ -26,7 +35,7 @@ Top15_run = season_results_run %>%
                            "S" = "Safety",
                            "DT" = "Defensive Tackle",
                            "DE" = "Defensive End")) %>%
-  filter(misalignment_rank < 16)
+  filter(misalignment_rank < 11)
 
 
 #load_roster from nflreadr to get 2022 headshots
@@ -62,8 +71,7 @@ gt_theme_pff <- function(data, ...) {
       headshot_url = " ",
       snaps = "Snaps",
       avg_misalignment = 'AVG Misalignment',
-      avg_tackle_prob_lost = 'AVG Tackle Prob Lost',
-      displayName = "Player"
+      displayName = "Player Name"
     ) %>%
     # if missing, replace NA w/ ---
     fmt_missing(
@@ -76,7 +84,7 @@ gt_theme_pff <- function(data, ...) {
         cell_text(color = "black", weight = "bold")
       ),
       locations = cells_body(
-        columns = 7
+        columns = 6
       )
     ) %>%
     # Make column labels and spanners all caps
@@ -103,7 +111,6 @@ gt_theme_pff <- function(data, ...) {
       displayName ~ px(150),
       headshot_url ~ px(60),
       avg_misalignment ~ px(150),
-      avg_tackle_prob_lost ~ px(150),
       position ~ px(70),
       everything() ~ px(60)
     ) %>% 
@@ -130,30 +137,107 @@ gt_theme_pff <- function(data, ...) {
               locations = cells_body())
 }
 
-# Top 15 Pass
-pass_table <- pass_headshots %>%
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 4),
-         avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
+# # Top 15 Pass
+# pass_table <- pass_headshots %>%
+#   select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
+#   mutate(avg_misalignment = round(avg_misalignment, 4),
+#          avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
+#   gt(groupname_col = 'position') %>%
+#   gt_theme_pff() %>%
+#   tab_header(title = "Top 15 Players in Pass Play Misalignment by Position")
+# 
+# pass_table
+# 
+# # Top 15 Run
+# run_table <- run_headshots %>%
+#   select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
+#   mutate(avg_misalignment = round(avg_misalignment, 4),
+#          avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
+#   gt(groupname_col = 'position') %>%
+#   gt_theme_pff() %>%
+#   tab_header(title = "Top 15 Players in Run Play Misalignment by Position")
+# 
+# run_table
+
+
+# Defensive Tackle --------------------------------------------------------
+dt_pass_table <- pass_headshots %>%
+  filter(position == "Defensive Tackle") %>% 
+  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
+  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
   gt(groupname_col = 'position') %>%
   gt_theme_pff() %>%
-  tab_header(title = "Top 15 Players in Pass Play Misalignment by Position")
+  tab_header(title = "Top 10 Players in Pass Play Misalignment by Position")
 
-pass_table
+dt_pass_table
 
-# Top 15 Run
-run_table <- run_headshots %>%
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 4),
-         avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
+dt_run_table <- run_headshots %>%
+  filter(position == "Defensive Tackle") %>% 
+  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
+  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
   gt(groupname_col = 'position') %>%
   gt_theme_pff() %>%
-  tab_header(title = "Top 15 Players in Run Play Misalignment by Position")
+  tab_header(title = "Top 10 Players in Run Play Misalignment by Position")
 
-run_table
+dt_run_table
+
+dt_table <- gt_two_column_layout(tables = list(dt_run_table, dt_pass_table),
+                                 vwidth = 1000,
+                                 output = "save",
+                                 filename = "viz/dt_misalignment_table.png")
+
+dt_table
+
+# Safety ------------------------------------------------------------------
+
+
+# Defensive End -----------------------------------------------------------
+
+
+# Linebacker --------------------------------------------------------------
+
+
+# Cornerback --------------------------------------------------------------
+
+
+
+
+
 
 gtsave(pass_table, "pass_table.png", expand = 75)
 gtsave(run_table, "run_table.png", expand = 75)
 
 listed_tables <- list(pass_table, run_table)
 pass_run_comp_table <- gt_two_column_layout(listed_tables)
+
+
+
+
+mtcars %>% 
+  mutate(good_mpg = ifelse(mpg > 20, "Good mileage", "Bad mileage"), 
+         car_name = row.names(.))  %>% 
+  arrange(hp) %>% 
+  group_by(relevel(factor(good_mpg), "Good mileage")) %>% 
+  slice_head(n=5) %>% 
+  select(car_name, hp) %>%
+  group_map(~ hp_table(.x)) %>% 
+  data.frame(.) %>% 
+  setNames(., c("High mileage", "Low mileage")) %>% 
+  gt() %>% 
+  fmt_markdown(columns = TRUE)
+
+
+season_results_rp %>% 
+  filter(position == "DT") %>% 
+  arrange(misalignment_rank) %>% 
+  group_by(relevel(factor(run_pass), "run")) %>% 
+  slice_head(n = 10) %>% 
+  select(misalignment_rank, displayName, avg_misalignment, snaps) %>% 
+  mutate(avg_misalignment = round(avg_misalignment, 3)) %>% 
+  group_map(~ misalignment_rp_table(.x)) %>% 
+  data.frame(.) %>% 
+  setNames(., c("Run", "Pass")) %>% 
+  gt() %>% 
+  fmt_markdown(columns = TRUE)
+
+

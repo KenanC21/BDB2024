@@ -28,11 +28,15 @@ season_results <- optimal_positions %>%
   # TODO - find out what to do with Isaiah Simmons. He's the only player listed
   # as DB, sources conflict on whether he's a LB or S
   mutate(position = case_when(position %in% c("CB") ~ "CB",
-                              position %in% c("SS", "FS") ~ "S",
+                              # DB is only here because Isaiah Simmons is the only
+                              # player listed as "DB"
+                              # but on ESPN and NFL websites he's a safety, so I included him
+                              position %in% c("SS", "FS", "DB") ~ "S",
                               # not sure about this one with NT and DT
                               position %in% c("DT", "NT") ~ "DT",
                               position %in% c("MLB", "ILB", "OLB") ~ "LB",
-                              position %in% c("DE") ~ "DE"))
+                              position %in% c("DE") ~ "DE")) %>% 
+  filter(!is.na(position))
 
 season_results %>% 
   ggplot(aes(x = avg_misalignment, y = avg_tackle_prob_lost)) +
@@ -65,4 +69,12 @@ season_results_run <- season_results %>%
   # arrange(desc(avg_tackle_prob_lost)) %>% 
   # mutate(tackle_prob_lost_rank = 1:n()) %>% 
   ungroup()
+
+season_results_rp <- season_results %>% 
+  group_by(position, run_pass) %>% 
+  arrange(avg_misalignment) %>% 
+  filter(snaps >= quantile(snaps, 0.7)) %>% 
+  mutate(misalignment_rank = 1:n()) %>% 
+  ungroup()
+
 
