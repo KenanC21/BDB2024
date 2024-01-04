@@ -78,3 +78,11 @@ season_results_rp <- season_results %>%
   ungroup()
 
 
+season_results_rp_wider <- season_results_rp %>% 
+  filter(misalignment_rank <= 10) %>% 
+  pivot_wider(id_cols = c(misalignment_rank, position),
+              values_from = c(nflId, displayName, avg_misalignment, snaps),
+              names_from = run_pass) %>% 
+  relocate(ends_with("_pass"), .after = snaps_run) %>% 
+  arrange(position, misalignment_rank)
+
