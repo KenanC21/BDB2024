@@ -10,16 +10,13 @@ windowsFonts("Roboto" = windowsFont("Roboto"))
 
 source("code/final_scripts/final_results.R")
 
-# code from this super handy stack overflow thread for side by side GT tables
-# https://stackoverflow.com/questions/65835639/arrange-gt-tables-side-by-side-or-in-a-grid-or-table-of-tables
-misalignment_rp_table <- function(x){
-  gt(x) %>% 
-    tab_options(column_labels.hidden = TRUE) %>% 
-    as_raw_html()
-}
+#round avg_misalignment to 4 decimals
+season_results_rp_wider = season_results_rp_wider %>%
+  mutate(avg_misalignment_run = round(avg_misalignment_run, 4),
+         avg_misalignment_pass = round(avg_misalignment_pass, 4))
 
-#Top 15 Players by Misalignment by Pass and Run plays respectively
-Top15_pass = season_results_rp_wider %>%
+#Top 10 Players by Misalignment by Pass and Run plays respectively
+Top10_pass = season_results_rp_wider %>%
   group_by(position) %>% 
   mutate(position = recode(position,"CB" = "Cornerback",
                          "LB" = "Linebacker",
@@ -28,7 +25,7 @@ Top15_pass = season_results_rp_wider %>%
                          "DE" = "Defensive End")) %>%
   filter(misalignment_rank < 11)
 
-Top15_run = season_results_rp_wider %>%
+Top10_run = season_results_rp_wider %>%
   group_by(position) %>% 
   mutate(position = recode(position,"CB" = "Cornerback",
                            "LB" = "Linebacker",
@@ -47,13 +44,13 @@ heads_run = roster[ , c('displayName', 'headshot_url')] %>%
   rename("displayName_run" = "displayName")
 
 
-#merge headshot url's with Top15_pass and Top15_run ordered by misalignment rank
-pass_headshots = merge(Top15_pass, heads_pass, by = 'displayName_pass') %>%
+#merge headshot url's with Top10_pass and Top10_run ordered by misalignment rank
+pass_headshots = merge(Top10_pass, heads_pass, by = 'displayName_pass') %>%
   group_by(position) %>%
   arrange(misalignment_rank, .by_group=TRUE) %>% 
   ungroup()
 
-run_headshots = merge(Top15_run, heads_run, by = 'displayName_run') %>%
+run_headshots = merge(Top10_run, heads_run, by = 'displayName_run') %>%
   group_by(position) %>%
   arrange(misalignment_rank, .by_group=TRUE) %>% 
   relocate('headshot_url', .after = 'snaps_run') %>% 
@@ -159,31 +156,8 @@ gt_theme_pff <- function(data, ...) {
               locations = cells_body())
 }
 
-# # Top 15 Pass
-# pass_table <- pass_headshots %>%
-#   select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
-#   mutate(avg_misalignment = round(avg_misalignment, 4),
-#          avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
-#   gt(groupname_col = 'position') %>%
-#   gt_theme_pff() %>%
-#   tab_header(title = "Top 15 Players in Pass Play Misalignment by Position")
-# 
-# pass_table
-# 
-# # Top 15 Run
-# run_table <- run_headshots %>%
-#   select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, avg_tackle_prob_lost, snaps) %>%
-#   mutate(avg_misalignment = round(avg_misalignment, 4),
-#          avg_tackle_prob_lost = round(avg_tackle_prob_lost, 4)) %>%
-#   gt(groupname_col = 'position') %>%
-#   gt_theme_pff() %>%
-#   tab_header(title = "Top 15 Players in Run Play Misalignment by Position")
-# 
-# run_table
-
 
 # Defensive Tackle --------------------------------------------------------
-
 dt_table <- leaders_headshots %>% 
   filter(position == "Defensive Tackle") %>% 
   select(misalignment_rank_run = misalignment_rank, starts_with("run_"), ends_with("_run"), starts_with("pass_"), ends_with("_pass"), -starts_with("nflId")) %>% 
@@ -208,113 +182,97 @@ dt_table
 gtsave(dt_table, filename = "viz/dt_misalignment_table.png")
 
 # Safety ------------------------------------------------------------------
-saf_pass_table <- pass_headshots %>%
+saf_table <- leaders_headshots %>% 
   filter(position == "Safety") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Pass Play Misalignment by Position")
-
-saf_pass_table
-
-saf_run_table <- run_headshots %>%
-  filter(position == "Safety") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Run Play Misalignment by Position")
-
-saf_run_table
-
-saf_table <- gt_two_column_layout(tables = list(saf_run_table, saf_pass_table),
-                                 vwidth = 1000,
-                                 output = "save",
-                                 filename = "viz/dsaf_misalignment_table.png")
+  select(misalignment_rank_run = misalignment_rank, starts_with("run_"), ends_with("_run"), starts_with("pass_"), ends_with("_pass"), -starts_with("nflId")) %>% 
+  mutate(misalignment_rank_pass = misalignment_rank_run) %>% 
+  relocate(misalignment_rank_pass, .after = snaps_run) %>% 
+  gt() %>% 
+  gt_theme_pff() %>% 
+  tab_header(title = "Top 10 Safeties in Tackle Misalignment") %>% 
+  gt_add_divider(columns = c(starts_with("snaps_")),
+                 sides = "right",
+                 color = "black") %>% 
+  gt_add_divider(columns = c(misalignment_rank_run),
+                 sides = "left",
+                 color = "black") %>% 
+  tab_spanner(label = "Run",
+              columns = c(misalignment_rank_run:snaps_run)) %>% 
+  tab_spanner(label = "Pass",
+              columns = c(misalignment_rank_pass:snaps_pass))
 
 saf_table
 
+gtsave(saf_table, filename = "viz/saf_misalignment_table.png")
+
 # Defensive End -----------------------------------------------------------
-de_pass_table <- pass_headshots %>%
+de_table <- leaders_headshots %>% 
   filter(position == "Defensive End") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Pass Play Misalignment by Position")
-
-de_pass_table
-
-de_run_table <- run_headshots %>%
-  filter(position == "Defensive End") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Run Play Misalignment by Position")
-
-de_run_table
-
-de_table <- gt_two_column_layout(tables = list(de_run_table, de_pass_table),
-                                 vwidth = 1000,
-                                 output = "save",
-                                 filename = "viz/de_misalignment_table.png")
+  select(misalignment_rank_run = misalignment_rank, starts_with("run_"), ends_with("_run"), starts_with("pass_"), ends_with("_pass"), -starts_with("nflId")) %>% 
+  mutate(misalignment_rank_pass = misalignment_rank_run) %>% 
+  relocate(misalignment_rank_pass, .after = snaps_run) %>% 
+  gt() %>% 
+  gt_theme_pff() %>% 
+  tab_header(title = "Top 10 Defensive Ends in Tackle Misalignment") %>% 
+  gt_add_divider(columns = c(starts_with("snaps_")),
+                 sides = "right",
+                 color = "black") %>% 
+  gt_add_divider(columns = c(misalignment_rank_run),
+                 sides = "left",
+                 color = "black") %>% 
+  tab_spanner(label = "Run",
+              columns = c(misalignment_rank_run:snaps_run)) %>% 
+  tab_spanner(label = "Pass",
+              columns = c(misalignment_rank_pass:snaps_pass))
 
 de_table
 
+gtsave(de_table, filename = "viz/de_misalignment_table.png")
+
 # Linebacker --------------------------------------------------------------
-lb_pass_table <- pass_headshots %>%
+lb_table <- leaders_headshots %>% 
   filter(position == "Linebacker") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Pass Play Misalignment by Position")
-
-lb_pass_table
-
-lb_run_table <- run_headshots %>%
-  filter(position == "Linebacker") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Run Play Misalignment by Position")
-
-lb_run_table
-
-lb_table <- gt_two_column_layout(tables = list(lb_run_table, lb_pass_table),
-                                 vwidth = 1000,
-                                 output = "save",
-                                 filename = "viz/lb_misalignment_table.png")
+  select(misalignment_rank_run = misalignment_rank, starts_with("run_"), ends_with("_run"), starts_with("pass_"), ends_with("_pass"), -starts_with("nflId")) %>% 
+  mutate(misalignment_rank_pass = misalignment_rank_run) %>% 
+  relocate(misalignment_rank_pass, .after = snaps_run) %>% 
+  gt() %>% 
+  gt_theme_pff() %>% 
+  tab_header(title = "Top 10 Linebackers in Tackle Misalignment") %>% 
+  gt_add_divider(columns = c(starts_with("snaps_")),
+                 sides = "right",
+                 color = "black") %>% 
+  gt_add_divider(columns = c(misalignment_rank_run),
+                 sides = "left",
+                 color = "black") %>% 
+  tab_spanner(label = "Run",
+              columns = c(misalignment_rank_run:snaps_run)) %>% 
+  tab_spanner(label = "Pass",
+              columns = c(misalignment_rank_pass:snaps_pass))
 
 lb_table
 
+gtsave(lb_table, filename = "viz/lb_misalignment_table.png")
+
 # Cornerback --------------------------------------------------------------
-cb_pass_table <- pass_headshots %>%
+cb_table <- leaders_headshots %>% 
   filter(position == "Cornerback") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Pass Play Misalignment by Position")
-
-cb_pass_table
-
-cb_run_table <- run_headshots %>%
-  filter(position == "Cornerback") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Run Play Misalignment by Position")
-
-cb_run_table
-
-cb_table <- gt_two_column_layout(tables = list(cb_run_table, cb_pass_table),
-                                 vwidth = 1000,
-                                 output = "save",
-                                 filename = "viz/cb_misalignment_table.png")
+  select(misalignment_rank_run = misalignment_rank, starts_with("run_"), ends_with("_run"), starts_with("pass_"), ends_with("_pass"), -starts_with("nflId")) %>% 
+  mutate(misalignment_rank_pass = misalignment_rank_run) %>% 
+  relocate(misalignment_rank_pass, .after = snaps_run) %>% 
+  gt() %>% 
+  gt_theme_pff() %>% 
+  tab_header(title = "Top 10 Cornerbacks in Tackle Misalignment") %>% 
+  gt_add_divider(columns = c(starts_with("snaps_")),
+                 sides = "right",
+                 color = "black") %>% 
+  gt_add_divider(columns = c(misalignment_rank_run),
+                 sides = "left",
+                 color = "black") %>% 
+  tab_spanner(label = "Run",
+              columns = c(misalignment_rank_run:snaps_run)) %>% 
+  tab_spanner(label = "Pass",
+              columns = c(misalignment_rank_pass:snaps_pass))
 
 cb_table
+
+gtsave(cb_table, filename = "viz/cb_misalignment_table.png")
