@@ -153,7 +153,11 @@ gt_theme_pff <- function(data, ...) {
                                 align = "center"),
               locations = cells_row_groups()) %>%
     tab_style(style = cell_text(v_align = "middle"),
-              locations = cells_body())
+              locations = cells_body()) %>% 
+    tab_style(style = cell_fill(color = "#f9f9fb"),
+              locations = cells_column_labels(everything())) %>% 
+    tab_style(style = cell_text(color = "black", style = "oblique"),
+              locations = cells_column_labels(everything()))
 }
 
 
@@ -166,12 +170,12 @@ dt_table <- leaders_headshots %>%
   gt() %>% 
   gt_theme_pff() %>% 
   tab_header(title = "Top 10 Defensive Tackles in Tackle Misalignment") %>% 
-  gt_add_divider(columns = c(starts_with("snaps_")),
+  gt_add_divider(columns = c(snaps_run),
                  sides = "right",
                  color = "black") %>% 
-  gt_add_divider(columns = c(misalignment_rank_run),
-                 sides = "left",
-                 color = "black") %>% 
+  # gt_add_divider(columns = c(misalignment_rank_run),
+  #                sides = "left",
+  #                color = "black") %>% 
   tab_spanner(label = "Run",
               columns = c(misalignment_rank_run:snaps_run)) %>% 
   tab_spanner(label = "Pass",
@@ -190,12 +194,12 @@ saf_table <- leaders_headshots %>%
   gt() %>% 
   gt_theme_pff() %>% 
   tab_header(title = "Top 10 Safeties in Tackle Misalignment") %>% 
-  gt_add_divider(columns = c(starts_with("snaps_")),
+  gt_add_divider(columns = c(snaps_run),
                  sides = "right",
                  color = "black") %>% 
-  gt_add_divider(columns = c(misalignment_rank_run),
-                 sides = "left",
-                 color = "black") %>% 
+  # gt_add_divider(columns = c(misalignment_rank_run),
+  #                sides = "left",
+  #                color = "black") %>% 
   tab_spanner(label = "Run",
               columns = c(misalignment_rank_run:snaps_run)) %>% 
   tab_spanner(label = "Pass",
@@ -214,12 +218,12 @@ de_table <- leaders_headshots %>%
   gt() %>% 
   gt_theme_pff() %>% 
   tab_header(title = "Top 10 Defensive Ends in Tackle Misalignment") %>% 
-  gt_add_divider(columns = c(starts_with("snaps_")),
+  gt_add_divider(columns = c(snaps_run),
                  sides = "right",
                  color = "black") %>% 
-  gt_add_divider(columns = c(misalignment_rank_run),
-                 sides = "left",
-                 color = "black") %>% 
+  # gt_add_divider(columns = c(misalignment_rank_run),
+  #                sides = "left",
+  #                color = "black") %>% 
   tab_spanner(label = "Run",
               columns = c(misalignment_rank_run:snaps_run)) %>% 
   tab_spanner(label = "Pass",
@@ -238,12 +242,12 @@ lb_table <- leaders_headshots %>%
   gt() %>% 
   gt_theme_pff() %>% 
   tab_header(title = "Top 10 Linebackers in Tackle Misalignment") %>% 
-  gt_add_divider(columns = c(starts_with("snaps_")),
+  gt_add_divider(columns = c(snaps_run),
                  sides = "right",
                  color = "black") %>% 
-  gt_add_divider(columns = c(misalignment_rank_run),
-                 sides = "left",
-                 color = "black") %>% 
+  # gt_add_divider(columns = c(misalignment_rank_run),
+  #                sides = "left",
+  #                color = "black") %>% 
   tab_spanner(label = "Run",
               columns = c(misalignment_rank_run:snaps_run)) %>% 
   tab_spanner(label = "Pass",
@@ -262,12 +266,12 @@ cb_table <- leaders_headshots %>%
   gt() %>% 
   gt_theme_pff() %>% 
   tab_header(title = "Top 10 Cornerbacks in Tackle Misalignment") %>% 
-  gt_add_divider(columns = c(starts_with("snaps_")),
+  gt_add_divider(columns = c(snaps_run),
                  sides = "right",
                  color = "black") %>% 
-  gt_add_divider(columns = c(misalignment_rank_run),
-                 sides = "left",
-                 color = "black") %>% 
+  # gt_add_divider(columns = c(misalignment_rank_run),
+  #                sides = "left",
+  #                color = "black") %>% 
   tab_spanner(label = "Run",
               columns = c(misalignment_rank_run:snaps_run)) %>% 
   tab_spanner(label = "Pass",
