@@ -50,11 +50,14 @@ heads_run = roster[ , c('displayName', 'headshot_url')] %>%
 #merge headshot url's with Top15_pass and Top15_run ordered by misalignment rank
 pass_headshots = merge(Top15_pass, heads_pass, by = 'displayName_pass') %>%
   group_by(position) %>%
-  arrange(misalignment_rank, .by_group=TRUE)
+  arrange(misalignment_rank, .by_group=TRUE) %>% 
+  ungroup()
+
 run_headshots = merge(Top15_run, heads_run, by = 'displayName_run') %>%
   group_by(position) %>%
   arrange(misalignment_rank, .by_group=TRUE) %>% 
-  relocate('headshot_url', .after = 'snaps_run')
+  relocate('headshot_url', .after = 'snaps_run') %>% 
+  ungroup()
 
 #Head shots for pass and run respectively added to df
 leaders_headshots <- run_headshots %>%
@@ -67,7 +70,7 @@ gt_theme_pff <- function(data, ...) {
     # Add head shot w/ web_image
     text_transform(
       locations = cells_body(
-        vars(headshot_url)
+        vars(pass_headshot, run_headshot)
       ),
       fn = function(x) {
         web_image(
@@ -78,11 +81,16 @@ gt_theme_pff <- function(data, ...) {
     ) %>%
     # Relabel columns
     cols_label(
-      misalignment_rank = 'Rank',
-      headshot_url = " ",
-      snaps = "Snaps",
-      avg_misalignment = 'AVG Misalignment',
-      displayName = "Player Name"
+      misalignment_rank_run = "Rank",
+      run_headshot = " ",
+      displayName_run = "Player Name",
+      avg_misalignment_run = "Avg Misalignment",
+      snaps_run = "Snaps",
+      misalignment_rank_pass = "Rank",
+      pass_headshot = " ",
+      displayName_pass = "Player Name",
+      avg_misalignment_pass = "Avg Misalignment",
+      snaps_pass = "Snaps"
     ) %>%
     # if missing, replace NA w/ ---
     fmt_missing(
@@ -118,11 +126,14 @@ gt_theme_pff <- function(data, ...) {
       data_row.padding = px(3)
     ) %>%
     cols_width(
-      misalignment_rank ~ px(70),
-      displayName ~ px(150),
-      headshot_url ~ px(60),
-      avg_misalignment ~ px(150),
-      position ~ px(70),
+      misalignment_rank_run ~ px(70),
+      misalignment_rank_pass ~ px(70),
+      displayName_run ~ px(150),
+      displayName_pass ~ px(150),
+      pass_headshot ~ px(60),
+      run_headshot ~ px(60),
+      avg_misalignment_run ~ px(150),
+      avg_misalignment_pass ~ px(150),
       everything() ~ px(60)
     ) %>% 
     # change color of border separating the text from the sourcenote
@@ -172,32 +183,29 @@ gt_theme_pff <- function(data, ...) {
 
 
 # Defensive Tackle --------------------------------------------------------
-dt_pass_table <- pass_headshots %>%
+
+dt_table <- leaders_headshots %>% 
   filter(position == "Defensive Tackle") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Pass Play Misalignment by Position")
-
-dt_pass_table
-
-dt_run_table <- run_headshots %>%
-  filter(position == "Defensive Tackle") %>% 
-  select(position, misalignment_rank, displayName, headshot_url, avg_misalignment, snaps) %>%
-  mutate(avg_misalignment = round(avg_misalignment, 3)) %>%
-  gt(groupname_col = 'position') %>%
-  gt_theme_pff() %>%
-  tab_header(title = "Top 10 Players in Run Play Misalignment by Position")
-
-dt_run_table
-
-dt_table <- gt_two_column_layout(tables = list(dt_run_table, dt_pass_table),
-                                 vwidth = 1000,
-                                 output = "save",
-                                 filename = "viz/dt_misalignment_table.png")
+  select(misalignment_rank_run = misalignment_rank, starts_with("run_"), ends_with("_run"), starts_with("pass_"), ends_with("_pass"), -starts_with("nflId")) %>% 
+  mutate(misalignment_rank_pass = misalignment_rank_run) %>% 
+  relocate(misalignment_rank_pass, .after = snaps_run) %>% 
+  gt() %>% 
+  gt_theme_pff() %>% 
+  tab_header(title = "Top 10 Defensive Tackles in Tackle Misalignment") %>% 
+  gt_add_divider(columns = c(starts_with("snaps_")),
+                 sides = "right",
+                 color = "black") %>% 
+  gt_add_divider(columns = c(misalignment_rank_run),
+                 sides = "left",
+                 color = "black") %>% 
+  tab_spanner(label = "Run",
+              columns = c(misalignment_rank_run:snaps_run)) %>% 
+  tab_spanner(label = "Pass",
+              columns = c(misalignment_rank_pass:snaps_pass))
 
 dt_table
+
+gtsave(dt_table, filename = "viz/dt_misalignment_table.png")
 
 # Safety ------------------------------------------------------------------
 saf_pass_table <- pass_headshots %>%

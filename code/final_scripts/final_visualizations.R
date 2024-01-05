@@ -56,3 +56,42 @@ sample_frame %>%
                filter(frameId == 31),
              aes(x = x, y = y, color = club),
              inherit.aes = F)
+
+
+# Plot for run-pass splits for safeties and linebackers -------------------
+
+source("code/final_scripts/final_results.R")
+
+# 
+season_results_rp_wider_2 <- season_results_rp %>% 
+  pivot_wider(id_cols = c(displayName, nflId, position),
+              values_from = c(avg_misalignment, snaps),
+              names_from = run_pass) %>% 
+  filter(!is.na(avg_misalignment_run) & !is.na(avg_misalignment_pass)) %>% 
+  filter(snaps_run >= 20 & snaps_pass >= 20)
+
+run_pass_misalignment_plot <- season_results_rp_wider_2 %>% 
+  ggplot(aes(x = avg_misalignment_run, y = avg_misalignment_pass, color = position)) +
+  geom_point(size = 2.5) +
+  geom_point(size = 2.5, shape = 1, color = "black") +
+  geom_text(data = season_results_rp_wider_2 %>% 
+              filter(avg_misalignment_pass < 0.67 | avg_misalignment_run < 0.68),
+            aes(x = avg_misalignment_run, y = avg_misalignment_pass, label = displayName),
+            inherit.aes = F,
+            nudge_x = 0.001,
+            nudge_y = -0.0016,
+            hjust = "left",
+            size = 3) +
+  scale_color_viridis_d() +
+  theme_minimal() +
+  labs(title = "Average Misalignment in Run/Pass Tackle Opportunities",
+       subtitle = "Minimum of 20 Snaps on Run and Pass Plays",
+       x = "Average Misalignment on Run Plays",
+       y = "Average Misalignment on Pass Plays") +
+  theme(text = element_text(family = "Roboto"))
+
+
+ggsave(plot = run_pass_misalignment_plot, filename = "viz/run_pass_misalignment_plot.jpeg",
+       width = 8, units = "in")
+
+
