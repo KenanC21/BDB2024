@@ -19,7 +19,7 @@ misalignment_rp_table <- function(x){
 }
 
 #Top 15 Players by Misalignment by Pass and Run plays respectively
-Top15_pass = season_results_pass %>%
+Top15_pass = season_results_rp_wider %>%
   group_by(position) %>% 
   mutate(position = recode(position,"CB" = "Cornerback",
                          "LB" = "Linebacker",
@@ -28,7 +28,7 @@ Top15_pass = season_results_pass %>%
                          "DE" = "Defensive End")) %>%
   filter(misalignment_rank < 11)
 
-Top15_run = season_results_run %>%
+Top15_run = season_results_rp_wider %>%
   group_by(position) %>% 
   mutate(position = recode(position,"CB" = "Cornerback",
                            "LB" = "Linebacker",
@@ -41,14 +41,25 @@ Top15_run = season_results_run %>%
 #load_roster from nflreadr to get 2022 headshots
 roster = nflreadr::load_rosters(2022)
 names(roster)[7] <- "displayName"
-heads = roster[ , c('displayName', 'headshot_url')]
+heads_pass = roster[ , c('displayName', 'headshot_url')] %>% 
+  rename("displayName_pass" = "displayName")
+heads_run = roster[ , c('displayName', 'headshot_url')] %>% 
+  rename("displayName_run" = "displayName")
+
 
 #merge headshot url's with Top15_pass and Top15_run ordered by misalignment rank
-pass_headshots = merge(Top15_pass, heads, by = 'displayName') %>%
-  arrange(misalignment_rank, .by_group = TRUE) 
-run_headshots = merge(Top15_run, heads, by = 'displayName') %>%
-  arrange(misalignment_rank, .by_group = TRUE) 
+pass_headshots = merge(Top15_pass, heads_pass, by = 'displayName_pass') %>%
+  group_by(position) %>%
+  arrange(misalignment_rank, .by_group=TRUE)
+run_headshots = merge(Top15_run, heads_run, by = 'displayName_run') %>%
+  group_by(position) %>%
+  arrange(misalignment_rank, .by_group=TRUE) %>% 
+  relocate('headshot_url', .after = 'snaps_run')
 
+#Head shots for pass and run respectively added to df
+leaders_headshots <- run_headshots %>%
+  add_column('pass_headshot' = pass_headshots$headshot_url) %>% 
+  rename("run_headshot" = "headshot_url")
 
 #gt theme from TheMockUp
 gt_theme_pff <- function(data, ...) {
@@ -299,6 +310,3 @@ cb_table <- gt_two_column_layout(tables = list(cb_run_table, cb_pass_table),
                                  filename = "viz/cb_misalignment_table.png")
 
 cb_table
-
-
-
