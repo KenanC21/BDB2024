@@ -54,8 +54,8 @@ sample_play_tackle_probs <- tackle_probs %>%
 
 
 anim <- ggplot() +
-  geom_rect(aes(xmin = 42, xmax = 45, ymin = 14, ymax = 24), fill = "#76b03f", colour = "#FFFFFF", linewidth = 0.5) +
-  geom_rect(aes(xmin = 45, xmax = 48, ymin = 14, ymax = 24), fill = "#669933", colour = "#FFFFFF", linewidth = 0.5) +
+  geom_rect(aes(xmin = 42, xmax = 45, ymin = 14, ymax = 24), fill = "#669933", colour = "#FFFFFF", linewidth = 0.5) +
+  geom_rect(aes(xmin = 45, xmax = 48, ymin = 14, ymax = 24), fill = "#76b03f", colour = "#FFFFFF", linewidth = 0.5) +
   geom_raster(data = sample_play_tackle_probs,
               aes(x = x, y = y, fill = tackle_prob)) +
   scale_fill_viridis_c() +
