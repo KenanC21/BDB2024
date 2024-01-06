@@ -41,21 +41,57 @@ anim_save(animation = animation, filename = "viz/participation_example.gif")
 
 
 
-# Create hypothetical positions frame plot --------------------------------
+# Highlight example of the hypothetical position circle -------------------
 
-sample_frame <- tackle_probs %>% 
+sample_play_subset <- sample_play %>% 
+  filter(frameId %in% 26:32) %>% 
+  filter(nflId %in% c(41239, 47939, 43335, 48512, 47857, NA))
+
+sample_play_tackle_probs <- tackle_probs %>% 
   filter(nflId == 41239) %>%  # look at Aaron Donald
-  filter(frameId == 31)
+  filter(frameId %in% 26:32)
 
-sample_frame %>% 
-  ggplot(aes(x = x, y = y, fill = tackle_prob)) +
-  geom_raster() +
+
+
+anim <- ggplot() +
+  geom_rect(aes(xmin = 42, xmax = 45, ymin = 14, ymax = 24), fill = "#76b03f", colour = "#FFFFFF", linewidth = 0.5) +
+  geom_rect(aes(xmin = 45, xmax = 48, ymin = 14, ymax = 24), fill = "#669933", colour = "#FFFFFF", linewidth = 0.5) +
+  geom_raster(data = sample_play_tackle_probs,
+              aes(x = x, y = y, fill = tackle_prob)) +
   scale_fill_viridis_c() +
-  theme_minimal() +
-  geom_point(data = sample_play %>% 
-               filter(frameId == 31),
-             aes(x = x, y = y, color = club),
-             inherit.aes = F)
+  geom_point(data = sample_play_subset, aes(x = x, y = y, color = club, group = nflId), alpha = 0.7,
+             size = 6.5,
+             inherit.aes = F) +
+  scale_color_manual(values = c("#002244", "#654321", "#e31837"), guide = "none") +
+  geom_text(data = sample_play_subset, aes(x = x, y = y, label = jerseyNumber), color = "white",
+            vjust = 0.36, size = 3.5,
+            inherit.aes = F) +
+  transition_time(frameId) +
+  theme(rect = element_blank(), ##This removes all of the exterior lines from a typical ggplot
+        line = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        text = element_text(family = "Roboto")) +
+  labs(fill = "Tackle Probability") +
+  coord_fixed()
+
+animation_2 <- animate(anim, nframes = 41, start_pause = 10, end_pause = 10, width = 1000)
+
+anim_save(filename = "viz/tackle_probs_example.gif", animation = animation_2)
+
+
+# sample_frame %>% 
+#   ggplot(aes(x = x, y = y, fill = tackle_prob)) +
+#   geom_raster() +
+#   scale_fill_viridis_c() +
+#   theme_minimal() +
+#   geom_point(data = sample_play %>% 
+#                filter(frameId == 31),
+#              aes(x = x, y = y, color = club),
+#              inherit.aes = F)
+
+
+
 
 
 # Plot for run-pass splits for safeties and linebackers -------------------
